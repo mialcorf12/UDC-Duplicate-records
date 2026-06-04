@@ -10,6 +10,22 @@ public with sharing class DuplicateIgnoreSelector {
      * @param pairKeys Set of pair key strings (min(id1,id2) + '_' + max(id1,id2)).
      * @return Map<String, DuplicateIgnore__c> keyed by PairKey__c.
      */
+    /**
+     * @description Returns a single DuplicateIgnore__c by PairKey__c for un-ignore operations.
+     * @param pairKey The canonical pair key string.
+     * @return The matching record, or null if not found.
+     */
+    public static DuplicateIgnore__c getByPairKey(String pairKey) {
+        List<DuplicateIgnore__c> records = [
+            SELECT Id, PairKey__c
+            FROM   DuplicateIgnore__c
+            WHERE  PairKey__c = :pairKey
+            WITH   SECURITY_ENFORCED
+            LIMIT  1
+        ];
+        return records.isEmpty() ? null : records[0];
+    }
+
     public static Map<String, DuplicateIgnore__c> getByPairKeys(Set<String> pairKeys) {
         Map<String, DuplicateIgnore__c> result = new Map<String, DuplicateIgnore__c>();
 

@@ -40,16 +40,8 @@ public with sharing class DuplicateIgnoreService {
      */
     public static void unignorePair(Id id1, Id id2) {
         String pairKey = buildPairKey(id1, id2);
-
-        List<DuplicateIgnore__c> existing = [
-            SELECT Id
-            FROM   DuplicateIgnore__c
-            WHERE  PairKey__c = :pairKey
-            WITH   SECURITY_ENFORCED
-            LIMIT  1
-        ];
-
-        if (!existing.isEmpty()) {
+        DuplicateIgnore__c existing = DuplicateIgnoreSelector.getByPairKey(pairKey);
+        if (existing != null) {
             delete existing;
         }
     }

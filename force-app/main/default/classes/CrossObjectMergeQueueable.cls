@@ -12,7 +12,7 @@
  *              7. Update audit record Status = Success
  *              On exception: update audit Status = Failed with error message
  */
-public class CrossObjectMergeQueueable implements Queueable {
+public with sharing class CrossObjectMergeQueueable implements Queueable {
 
     private Id leadId;
     private Id contactId;
@@ -49,6 +49,7 @@ public class CrossObjectMergeQueueable implements Queueable {
             Status__c         = 'Pending',
             MergeType__c      = 'CrossObject',
             MergedDate__c     = DateTime.now(),
+            JobId__c          = ctx != null ? String.valueOf(ctx.getJobId()) : null,
             FieldOverridesJSON__c = JSON.serialize(fieldOverrides)
         );
         insert audit;
