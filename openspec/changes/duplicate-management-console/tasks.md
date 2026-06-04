@@ -47,29 +47,29 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Apex Selectors + Scoring Utility
 
-- [ ] 2.1 Create `classes/DuplicateClusterSelector.cls` (with sharing) — `getWithMembers(clusterId)`, `getByMemberRecordIds(ids)`, `getOpenClusters(objectType, status, minScore, pageSize, offset)`
-- [ ] 2.2 Create `classes/DuplicateClusterSelectorTest.cls` — bulk 200 records, sharing enforcement
-- [ ] 2.3 Create `classes/DuplicateIgnoreSelector.cls` (with sharing) — `getByPairKeys(Set<String> pairKeys)`
-- [ ] 2.4 Create `classes/DuplicateIgnoreSelectorTest.cls`
-- [ ] 2.5 Create `classes/ContactSelector.cls` (with sharing) — `getByBlockKeys(Set<String> keys, String blockField)`, `getByIds(Set<Id> ids)`
-- [ ] 2.6 Create `classes/ContactSelectorTest.cls`
-- [ ] 2.7 Create `classes/LeadSelector.cls` (with sharing) — same interface as ContactSelector
-- [ ] 2.8 Create `classes/LeadSelectorTest.cls`
-- [ ] 2.9 Create `classes/DuplicateScoringUtil.cls` — `scoreRecords(SObject r1, SObject r2): Decimal` using Jaro-Winkler; weights Email(40)+Phone(30)+Name(20)+Company(10)
-- [ ] 2.10 Create `classes/DuplicateScoringUtilTest.cls` — test exact match (100), no match (0), partial match (threshold boundary 69/70/85)
+- [x] 2.1 Create `classes/DuplicateClusterSelector.cls` (with sharing) — `getWithMembers(clusterId)`, `getByMemberRecordIds(ids)`, `getOpenClusters(objectType, status, minScore, pageSize, offset)`
+- [x] 2.2 Create `classes/DuplicateClusterSelectorTest.cls` — bulk 200 records, sharing enforcement
+- [x] 2.3 Create `classes/DuplicateIgnoreSelector.cls` (with sharing) — `getByPairKeys(Set<String> pairKeys)`
+- [x] 2.4 Create `classes/DuplicateIgnoreSelectorTest.cls`
+- [x] 2.5 Create `classes/ContactSelector.cls` (with sharing) — `getByBlockKeys(Set<String> keys, String blockField)`, `getByIds(Set<Id> ids)`
+- [x] 2.6 Create `classes/ContactSelectorTest.cls`
+- [x] 2.7 Create `classes/LeadSelector.cls` (with sharing) — same interface as ContactSelector
+- [x] 2.8 Create `classes/LeadSelectorTest.cls`
+- [x] 2.9 Create `classes/DuplicateScoringUtil.cls` — `scoreRecords(SObject r1, SObject r2): Decimal` using Jaro-Winkler; weights Email(40)+Phone(30)+Name(20)+Company(10)
+- [x] 2.10 Create `classes/DuplicateScoringUtilTest.cls` — test exact match (100), no match (0), partial match (threshold boundary 69/70/85)
 
 ---
 
 ## Phase 3: Apex Services + Batch + Queueable
 
-- [ ] 3.1 Create `classes/DuplicateDetectionBatch.cls` (Batchable, Stateful) — start: `Database.QueryLocator` on all Contacts (`WHERE IsDeleted = false`); execute: group received records by `Email_Block__c` in memory (Stateful accumulator), then query matching Leads per block key, score pairs ≥70, skip ignored pairs, upsert clusters+members; finish: log summary. Note: `SELECT DISTINCT` is NOT supported in QueryLocator — blocking key grouping happens in-memory per execute chunk.
-- [ ] 3.2 Create `classes/DuplicateDetectionBatchTest.cls` — bulk: 200 contacts + 200 leads; verify cluster creation; verify ignored pair skipped
-- [ ] 3.3 Create `classes/CrossObjectMergeQueueable.cls` — `execute()`: convertLead → fetch both contacts → apply fieldOverrides → merge → update cluster → insert audit
-- [ ] 3.4 Create `classes/CrossObjectMergeQueueableTest.cls` — Test.startTest/stopTest; verify converted contact merged; verify audit record Status=Success; verify error path Status=Failed
-- [ ] 3.5 Create `classes/DuplicateMergeService.cls` — `mergeSameObject(clusterId, masterId, fieldOverrides)` for Contact-Contact and Lead-Lead; `initiateCrossObjectMerge(leadId, contactId, fieldOverrides)` returns jobId
-- [ ] 3.6 Create `classes/DuplicateMergeServiceTest.cls` — bulk: 3-record cluster; positive merge; error on invalid masterId
-- [ ] 3.7 Create `classes/DuplicateIgnoreService.cls` — `ignorePair(id1, id2, userId, reason)` upserts DuplicateIgnore__c by PairKey__c; `unignorePair(id1, id2)` deletes it
-- [ ] 3.8 Create `classes/DuplicateIgnoreServiceTest.cls` — verify idempotent upsert; verify un-ignore
+- [x] 3.1 Create `classes/DuplicateDetectionBatch.cls` (Batchable, Stateful) — start: `Database.QueryLocator` on all Contacts (`WHERE IsDeleted = false`); execute: group received records by `Email_Block__c` in memory (Stateful accumulator), then query matching Leads per block key, score pairs ≥70, skip ignored pairs, upsert clusters+members; finish: log summary. Note: `SELECT DISTINCT` is NOT supported in QueryLocator — blocking key grouping happens in-memory per execute chunk.
+- [x] 3.2 Create `classes/DuplicateDetectionBatchTest.cls` — bulk: 200 contacts + 200 leads; verify cluster creation; verify ignored pair skipped
+- [x] 3.3 Create `classes/CrossObjectMergeQueueable.cls` — `execute()`: convertLead → fetch both contacts → apply fieldOverrides → merge → update cluster → insert audit
+- [x] 3.4 Create `classes/CrossObjectMergeQueueableTest.cls` — Test.startTest/stopTest; verify converted contact merged; verify audit record Status=Success; verify error path Status=Failed
+- [x] 3.5 Create `classes/DuplicateMergeService.cls` — `mergeSameObject(clusterId, masterId, fieldOverrides)` for Contact-Contact and Lead-Lead; `initiateCrossObjectMerge(leadId, contactId, fieldOverrides)` returns jobId
+- [x] 3.6 Create `classes/DuplicateMergeServiceTest.cls` — bulk: 3-record cluster; positive merge; error on invalid masterId
+- [x] 3.7 Create `classes/DuplicateIgnoreService.cls` — `ignorePair(id1, id2, userId, reason)` upserts DuplicateIgnore__c by PairKey__c; `unignorePair(id1, id2)` deletes it
+- [x] 3.8 Create `classes/DuplicateIgnoreServiceTest.cls` — verify idempotent upsert; verify un-ignore
 
 ---
 
