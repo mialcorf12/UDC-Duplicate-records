@@ -121,4 +121,38 @@ public with sharing class DuplicateClusterSelector {
         // sharing is enforced by the "with sharing" class declaration.
         return Database.query(baseQuery); //NOSONAR
     }
+
+    /**
+     * @description Returns the total count of clusters matching the given filters.
+     *              Used by the LWC controller to support pagination (totalCount).
+     *              Mirrors the filter logic of getOpenClusters without pagination params.
+     *
+     * @param objectType  Picklist value to filter on ObjectType__c, or null for all.
+     * @param status      Picklist value to filter on Status__c, or null for all.
+     * @param minScore    Minimum ClusterScore__c (inclusive). Use 0 or null to skip.
+     * @return Total integer count matching the filters.
+     */
+    public static Integer countClusters(
+        String  objectType,
+        String  status,
+        Decimal minScore
+    ) {
+        if (minScore == null) {
+            minScore = 0;
+        }
+
+        String countQuery =
+            'SELECT COUNT() FROM DuplicateCluster__c ' +
+            'WHERE ClusterScore__c >= :minScore ';
+
+        if (String.isNotBlank(objectType)) {
+            countQuery += 'AND ObjectType__c = :objectType ';
+        }
+        if (String.isNotBlank(status)) {
+            countQuery += 'AND Status__c = :status ';
+        }
+
+        // Sharing enforced by "with sharing" class declaration
+        return Database.countQuery(countQuery); //NOSONAR
+    }
 }
