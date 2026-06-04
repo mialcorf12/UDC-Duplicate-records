@@ -1,0 +1,60 @@
+<template>
+    <div class="slds-scrollable_y cluster-list-container">
+        <!-- Loading state -->
+        <template if:true={isLoading}>
+            <div class="slds-align_absolute-center slds-p-around_medium">
+                <lightning-spinner
+                    alternative-text="Loading clusters…"
+                    size="small"
+                ></lightning-spinner>
+            </div>
+        </template>
+
+        <!-- Error state -->
+        <template if:true={hasError}>
+            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-around_small" role="alert">
+                <p>{errorMessage}</p>
+            </div>
+        </template>
+
+        <!-- Cluster list -->
+        <template if:false={isLoading}>
+            <template if:true={hasClusters}>
+                <ul class="slds-has-dividers_bottom-space" role="listbox">
+                    <template for:each={clusters} for:item="cluster">
+                        <li key={cluster.Id} role="option">
+                            <c-duplicate-cluster-list-item
+                                cluster={cluster}
+                                onclusterselect={handleClusterSelect}
+                            ></c-duplicate-cluster-list-item>
+                        </li>
+                    </template>
+                </ul>
+                <template if:true={showLoadMore}>
+                    <div class="slds-align_absolute-center slds-p-around_small">
+                        <lightning-button
+                            label="Load More"
+                            variant="neutral"
+                            onclick={handleLoadMore}
+                            disabled={isLoadingMore}
+                        ></lightning-button>
+                    </div>
+                </template>
+            </template>
+
+            <!-- Empty state -->
+            <template if:false={hasClusters}>
+                <template if:false={hasError}>
+                    <div class="slds-illustration slds-illustration_small slds-p-around_large">
+                        <div class="slds-text-longform slds-text-align_center">
+                            <p class="slds-text-heading_medium">No duplicate clusters found</p>
+                            <p class="slds-text-body_regular slds-text-color_weak">
+                                Try adjusting your filters or run the detection batch.
+                            </p>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </template>
+    </div>
+</template>

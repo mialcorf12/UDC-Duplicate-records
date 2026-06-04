@@ -1,0 +1,43 @@
+<template>
+    <template if:true={hasMembers}>
+        <div class="slds-scrollable_x">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout" role="grid">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th scope="col" style="width: 120px;">
+                            <div class="slds-truncate" title="Field">Field</div>
+                        </th>
+                        <template for:each={memberHeaders} for:item="header">
+                            <th key={header.recordId} scope="col">
+                                <div class="slds-truncate slds-text-align_center" title={header.title}>
+                                    <span class={header.badgeClass}>{header.objectType}</span>
+                                    <br />
+                                    <span class="slds-text-body_small slds-text-color_weak">{header.shortId}</span>
+                                </div>
+                            </th>
+                        </template>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={fieldRows} for:item="row">
+                        <c-duplicate-field-row
+                            key={row.fieldName}
+                            field-label={row.fieldLabel}
+                            field-name={row.fieldName}
+                            values={row.values}
+                            selected-record-id={row.selectedRecordId}
+                            onfieldoverride={handleFieldOverride}
+                        ></c-duplicate-field-row>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </template>
+    <template if:false={hasMembers}>
+        <div class="slds-illustration slds-illustration_small">
+            <div class="slds-text-longform">
+                <p class="slds-text-body_regular">No member data available.</p>
+            </div>
+        </div>
+    </template>
+</template>

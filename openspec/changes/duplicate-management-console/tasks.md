@@ -99,16 +99,16 @@ Chain strategy: feature-branch-chain
 
 ## Phase 6: LWC Components + Flexipage
 
-- [ ] 6.1 Create `lwc/duplicateFieldRow/` — presentational; `@api fieldName`, `@api values[]`; radio group for value selection; emits `fieldoverride` event
-- [ ] 6.2 Create `lwc/duplicateClusterListItem/` — presentational; `@api cluster`; renders ObjectType badge, score, record count; emits `clusterselect`
-- [ ] 6.3 Create `lwc/duplicateMergeProgress/` — presentational; `@api step` (Detecting/Converting/Merging/Done/Failed); step indicator UI
-- [ ] 6.4 Create `lwc/duplicateFieldComparisonTable/` — presentational; `@api members[]`; renders grid of duplicateFieldRow for Email, Phone, Name, Company; emits `fieldoverride` aggregate
-- [ ] 6.5 Create `lwc/duplicateFilterBar/` — smart; filter picklists (ObjectType, Status, Score threshold); fires `filterchange` event upstream
-- [ ] 6.6 Create `lwc/duplicateClusterList/` — smart; `@wire getClusterList` with reactive filter params; infinite scroll (pageNumber increment); fires `clusterselect`
-- [ ] 6.7 Create `lwc/duplicateClusterDetail/` — smart; `@wire getClusterDetail({clusterId: '$selectedClusterId'})`; owns `fieldOverrideMap`; passes members to duplicateFieldComparisonTable
-- [ ] 6.8 Create `lwc/duplicateMergeActions/` — smart; calls `mergeCluster` / `ignoreCluster` imperatively; owns polling loop (2s interval, 3 retries max) via recursive `setTimeout` registered in `connectedCallback` and cleared in `disconnectedCallback` — do NOT use `window.setInterval` directly; fires `mergedone` on success
-- [ ] 6.9 Create `lwc/duplicateManagementConsole/` — page container; owns `selectedClusterId`; wires duplicateFilterBar → duplicateClusterList → duplicateClusterDetail + duplicateMergeActions in 30/70 layout
-- [ ] 6.10 Create `flexipages/DuplicateConsole.flexipage-meta.xml` — Lightning App Page; two-column layout 30/70; assign duplicateManagementConsole component
+- [x] 6.1 Create `lwc/duplicateFieldRow/` — presentational; `@api fieldName`, `@api values[]`; radio group for value selection; emits `fieldoverride` event
+- [x] 6.2 Create `lwc/duplicateClusterListItem/` — presentational; `@api cluster`; renders ObjectType badge, score, record count; emits `clusterselect`
+- [x] 6.3 Create `lwc/duplicateMergeProgress/` — presentational; `@api step` (Detecting/Converting/Merging/Done/Failed); step indicator UI
+- [x] 6.4 Create `lwc/duplicateFieldComparisonTable/` — presentational; `@api members[]`; renders grid of duplicateFieldRow for Email, Phone, Name, Company; emits `fieldoverride` aggregate
+- [x] 6.5 Create `lwc/duplicateFilterBar/` — smart; filter picklists (ObjectType, Status, Score threshold); fires `filterchange` event upstream
+- [x] 6.6 Create `lwc/duplicateClusterList/` — smart; `@wire getClusterList` with reactive filter params; infinite scroll (pageNumber increment); fires `clusterselect`
+- [x] 6.7 Create `lwc/duplicateClusterDetail/` — smart; `@wire getClusterDetail({clusterId: '$selectedClusterId'})`; owns `fieldOverrideMap`; passes members to duplicateFieldComparisonTable
+- [x] 6.8 Create `lwc/duplicateMergeActions/` — smart; calls `mergeCluster` / `ignoreCluster` imperatively; owns polling loop (2s interval, 3 retries max) via recursive `setTimeout` registered in `connectedCallback` and cleared in `disconnectedCallback` — do NOT use `window.setInterval` directly; fires `mergedone` on success
+- [x] 6.9 Create `lwc/duplicateManagementConsole/` — page container; owns `selectedClusterId`; wires duplicateFilterBar → duplicateClusterList → duplicateClusterDetail + duplicateMergeActions in 30/70 layout
+- [x] 6.10 Create `flexipages/DuplicateConsole.flexipage-meta.xml` — Lightning App Page; two-column layout 30/70; assign duplicateManagementConsole component
 
 ---
 

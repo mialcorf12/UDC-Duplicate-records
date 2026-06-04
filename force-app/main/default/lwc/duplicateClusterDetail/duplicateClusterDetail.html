@@ -1,0 +1,119 @@
+<template>
+    <template if:true={hasClusterId}>
+        <template if:true={isLoading}>
+            <div class="slds-align_absolute-center slds-p-around_large">
+                <lightning-spinner alternative-text="Loading cluster details…" size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={hasError}>
+            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-around_small" role="alert">
+                <p>{errorMessage}</p>
+            </div>
+        </template>
+
+        <template if:true={hasData}>
+            <!-- Cluster Header -->
+            <div class="slds-card slds-m-bottom_small">
+                <div class="slds-card__header slds-grid">
+                    <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                        <div class="slds-media__body">
+                            <h2 class="slds-card__header-title">
+                                <span>{cluster.Name}</span>
+                            </h2>
+                        </div>
+                        <div class="slds-no-flex">
+                            <span class="slds-badge slds-m-right_x-small">{cluster.ObjectType__c}</span>
+                            <span class="slds-badge">{cluster.Status__c}</span>
+                        </div>
+                    </header>
+                </div>
+                <div class="slds-card__body slds-card__body_inner">
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col">
+                            <p class="slds-text-body_small">
+                                <strong>Score:</strong> {cluster.ClusterScore__c}
+                            </p>
+                        </div>
+                        <div class="slds-col">
+                            <p class="slds-text-body_small">
+                                <strong>Records:</strong> {cluster.RecordCount__c}
+                            </p>
+                        </div>
+                        <div class="slds-col">
+                            <p class="slds-text-body_small">
+                                <strong>Detected:</strong> {formattedDate}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Master Record Selector -->
+            <div class="slds-card slds-m-bottom_small">
+                <div class="slds-card__header">
+                    <h2 class="slds-card__header-title">Select Master Record</h2>
+                </div>
+                <div class="slds-card__body slds-card__body_inner">
+                    <fieldset class="slds-form-element">
+                        <legend class="slds-form-element__legend slds-form-element__label slds-assistive-text">
+                            Master Record
+                        </legend>
+                        <div class="slds-form-element__control slds-grid slds-wrap">
+                            <template for:each={memberOptions} for:item="opt">
+                                <span key={opt.recordId} class="slds-radio slds-m-right_medium">
+                                    <input
+                                        type="radio"
+                                        name="masterRecord"
+                                        id={opt.inputId}
+                                        value={opt.recordId}
+                                        checked={opt.isSelected}
+                                        onchange={handleMasterChange}
+                                    />
+                                    <label class="slds-radio__label" for={opt.inputId}>
+                                        <span class="slds-radio_faux"></span>
+                                        <span class="slds-form-element__label">
+                                            {opt.label}
+                                        </span>
+                                    </label>
+                                </span>
+                            </template>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+            <!-- Field Comparison Table -->
+            <div class="slds-card slds-m-bottom_small">
+                <div class="slds-card__header">
+                    <h2 class="slds-card__header-title">Field Comparison</h2>
+                </div>
+                <div class="slds-card__body">
+                    <c-duplicate-field-comparison-table
+                        members={parsedMembers}
+                        field-override-map={fieldOverrideMap}
+                        onfieldoverride={handleFieldOverride}
+                    ></c-duplicate-field-comparison-table>
+                </div>
+            </div>
+
+            <!-- Merge Actions -->
+            <div class="slds-card slds-m-bottom_small">
+                <div class="slds-card__body slds-card__body_inner">
+                    <c-duplicate-merge-actions
+                        cluster-id={clusterId}
+                        master-id={selectedMasterId}
+                        field-override-map={fieldOverrideMap}
+                        onmergedone={handleMergeDone}
+                    ></c-duplicate-merge-actions>
+                </div>
+            </div>
+
+            <!-- Merge Progress -->
+            <c-duplicate-merge-progress step={mergeStep}></c-duplicate-merge-progress>
+        </template>
+    </template>
+    <template if:false={hasClusterId}>
+        <!-- Empty state handled by parent -->
+    </template>
+</template>
