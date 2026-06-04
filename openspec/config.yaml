@@ -1,0 +1,95 @@
+schema: spec-driven
+
+# ──────────────────────────────────────────────
+# Project context
+# ──────────────────────────────────────────────
+context: |
+  Project: Duplicate Records (udc duplicate records)
+  Platform: Salesforce DX — API v66.0 (Summer '25)
+  Stack: Apex, Lightning Web Components (LWC), SOQL
+  Org edition: Developer (scratch-org target: Dev)
+  Source path: force-app/main/default/
+  Architecture: SFDX source-format; no Unlocked Package yet
+  Testing: No test runner configured yet (strict_tdd: false)
+  Status: Greenfield — no source files in force-app/main/default
+
+# ──────────────────────────────────────────────
+# Testing
+# ──────────────────────────────────────────────
+testing:
+  strict_tdd: false
+  strict_tdd_reason: >
+    No test runner configured. Jest (for LWC) and Apex test classes
+    (sf apex run test) must be set up before strict TDD can be enforced.
+
+  layers:
+    unit:
+      available: false
+      tool: "Apex @isTest — not yet configured"
+    integration:
+      available: false
+      tool: "—"
+    e2e:
+      available: false
+      tool: "—"
+
+  coverage:
+    available: false
+    command: "sf apex run test --code-coverage"
+    note: "Available via Salesforce CLI once Apex test classes exist"
+
+  quality:
+    linter:
+      available: false
+      command: "eslint (needs package.json + @salesforce/eslint-config-lwc)"
+    type_checker:
+      available: false
+      command: "—"
+    formatter:
+      available: false
+      command: "prettier (needs package.json + prettier-plugin-apex)"
+    static_analysis:
+      available: false
+      command: "pmd --rulesets apex (PMD not yet installed)"
+
+# ──────────────────────────────────────────────
+# SDD Phase rules
+# ──────────────────────────────────────────────
+rules:
+  proposal:
+    - Include rollback plan for any metadata/data model changes
+    - State which Salesforce objects and fields are affected
+    - Flag governor-limit risks (SOQL per transaction, DML, CPU time)
+
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Reference Salesforce object API names (e.g. DuplicateRecordSet, DuplicateRecordItem)
+
+  design:
+    - Follow one-trigger-per-object pattern; delegate to handler class
+    - Service layer: stateless, bulkified, no SOQL inside loops
+    - Selector layer: all SOQL centralized, with/without sharing explicit
+    - Document architecture decisions with rationale
+    - Include sequence diagrams for async or multi-object flows
+
+  tasks:
+    - Group by phase (Apex classes, LWC, metadata, tests)
+    - Use hierarchical numbering
+    - Keep each task completable in one session
+    - Every Apex task must include a paired @isTest task
+
+  apply:
+    - Follow existing Salesforce DX source-format conventions
+    - No hardcoded IDs; use Custom Labels or Custom Metadata for config
+    tdd: false
+    test_command: "sf apex run test --synchronous --code-coverage"
+
+  verify:
+    test_command: "sf apex run test --synchronous --code-coverage"
+    build_command: "sf project deploy start --dry-run"
+    coverage_threshold: 85
+
+  archive:
+    - Warn before merging destructive deltas (field deletions, permission changes)
+    - Update openspec/specs/{domain}/spec.md after archive
