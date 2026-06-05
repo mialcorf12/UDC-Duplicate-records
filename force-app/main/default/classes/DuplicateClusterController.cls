@@ -25,7 +25,7 @@ public with sharing class DuplicateClusterController {
         Integer pageNumber
     ) {
         // Apply defaults / guard clauses
-        if (pageSize   == null || pageSize   <= 0) { pageSize   = 50; }
+        if (pageSize   == null || pageSize   <= 0) { pageSize   = 10; }
         if (pageNumber == null || pageNumber  < 1) { pageNumber = 1;  }
         if (minScore   == null)                    { minScore   = 0;  }
 

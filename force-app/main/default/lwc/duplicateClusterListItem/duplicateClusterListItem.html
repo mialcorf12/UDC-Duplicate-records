@@ -1,28 +1,28 @@
 <template>
     <div class="slds-media slds-media_center cluster-tile" onclick={handleClick} role="button" tabindex="0" onkeydown={handleKeyDown}>
-        <div class="slds-media__figure">
+        <div class="slds-media__figure" style="width: 70px;">
             <span class={badgeClass} title={cluster.ObjectType__c}>
                 {cluster.ObjectType__c}
             </span>
         </div>
         <div class="slds-media__body">
             <div class="slds-grid slds-grid_vertical-align-center slds-wrap">
-                <div class="slds-col slds-size_1-of-1">
+                <div class="slds-col slds-size_1-of-4">
                     <p class="slds-text-heading_small slds-truncate" title={cluster.Name}>
                         {cluster.Name}
                     </p>
                 </div>
-                <div class="slds-col slds-size_1-of-2">
-                    <p class="slds-text-body_small slds-text-color_weak">
-                        Score: {cluster.ClusterScore__c}
-                    </p>
-                </div>
-                <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+                <div class="slds-col slds-size_1-of-4">
                     <p class="slds-text-body_small slds-text-color_weak">
                         {recordCountLabel}
                     </p>
                 </div>
-                <div class="slds-col slds-size_1-of-1 slds-var-m-top_x-small">
+                <div class="slds-col slds-size_1-of-4">
+                    <p class="slds-text-body_small slds-text-color_weak">
+                        Score: {cluster.ClusterScore__c}
+                    </p>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-var-m-top_x-small">
                     <span class={statusBadgeClass}>
                         {cluster.Status__c}
                     </span>

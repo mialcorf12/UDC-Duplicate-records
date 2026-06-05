@@ -1,10 +1,12 @@
 import { LightningElement, api } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
 
 // Fields to display in the comparison grid (in order)
 const COMPARISON_FIELDS = [
+    { fieldName: 'FirstName', fieldLabel: 'FirstName' },
+    { fieldName: 'LastName', fieldLabel: 'LastName' },
     { fieldName: 'Email', fieldLabel: 'Email' },
     { fieldName: 'Phone', fieldLabel: 'Phone' },
-    { fieldName: 'Name', fieldLabel: 'Name' },
     { fieldName: 'Company', fieldLabel: 'Company' }
 ];
 
@@ -13,7 +15,7 @@ const OBJECT_TYPE_BADGE = {
     Lead: 'slds-badge slds-badge_lightest slds-theme_warning'
 };
 
-export default class DuplicateFieldComparisonTable extends LightningElement {
+export default class DuplicateFieldComparisonTable extends NavigationMixin(LightningElement) {
     _members = [];
     _parsedMembers = [];
 
@@ -62,29 +64,42 @@ export default class DuplicateFieldComparisonTable extends LightningElement {
 
     get fieldRows() {
         return COMPARISON_FIELDS.map((f) => {
-            const values = this._parsedMembers.map((m) => ({
-                recordId: m.recordId,
-                value: m.snapshot[f.fieldName] || '',
-                objectType: m.objectType
-            }));
             const selectedRecordId = this.fieldOverrideMap
                 ? this.fieldOverrideMap[f.fieldName]
                 : null;
+            const values = this._parsedMembers.map((m) => ({
+                recordId: m.recordId,
+                value: m.snapshot[f.fieldName] || '',
+                objectType: m.objectType,
+                inputId: `${f.fieldName}-${m.recordId}`,
+                isSelected: selectedRecordId === m.recordId
+            }));
 
             return {
                 fieldName: f.fieldName,
                 fieldLabel: f.fieldLabel,
-                values,
-                selectedRecordId: selectedRecordId || null
+                values
             };
         });
     }
 
-    handleFieldOverride(event) {
-        // Bubble up the fieldoverride event from duplicateFieldRow
+    handleRecordClick(event) {
+        event.preventDefault();
+        const recordId = event.currentTarget.dataset.recordId;
+        this[NavigationMixin.GenerateUrl]({
+            type: 'standard__recordPage',
+            attributes: { recordId, actionName: 'view' }
+        }).then((url) => {
+            window.open(url, '_blank');
+        });
+    }
+
+    handleRadioChange(event) {
+        const fieldName = event.target.dataset.fieldName;
+        const winningRecordId = event.target.value;
         this.dispatchEvent(
             new CustomEvent('fieldoverride', {
-                detail: event.detail,
+                detail: { fieldName, winningRecordId },
                 bubbles: true,
                 composed: true
             })

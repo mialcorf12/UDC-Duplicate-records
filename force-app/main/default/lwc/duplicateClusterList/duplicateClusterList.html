@@ -22,7 +22,7 @@
             <template if:true={hasClusters}>
                 <ul class="slds-has-dividers_bottom-space" role="listbox">
                     <template for:each={clusters} for:item="cluster">
-                        <li key={cluster.Id} role="option">
+                        <li key={cluster.Id} role="option" style="height: 40px; align-content: space-evenly;">
                             <c-duplicate-cluster-list-item
                                 cluster={cluster}
                                 onclusterselect={handleClusterSelect}

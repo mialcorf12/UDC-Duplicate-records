@@ -5,29 +5,48 @@
                 <thead>
                     <tr class="slds-line-height_reset">
                         <th scope="col" style="width: 120px;">
-                            <div class="slds-truncate" title="Field">Field</div>
+                            <div class="slds-truncate" title="Field"></div>
                         </th>
                         <template for:each={memberHeaders} for:item="header">
                             <th key={header.recordId} scope="col">
-                                <div class="slds-truncate slds-text-align_center" title={header.title}>
+                                <div class="slds-truncate" title={header.title}>
                                     <span class={header.badgeClass}>{header.objectType}</span>
                                     <br />
-                                    <span class="slds-text-body_small slds-text-color_weak">{header.shortId}</span>
+                                    <a href="#" data-record-id={header.recordId} onclick={handleRecordClick}
+                                        class="slds-text-body_small">{header.shortId}</a>
                                 </div>
                             </th>
                         </template>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
                     <template for:each={fieldRows} for:item="row">
-                        <c-duplicate-field-row
-                            key={row.fieldName}
-                            field-label={row.fieldLabel}
-                            field-name={row.fieldName}
-                            values={row.values}
-                            selected-record-id={row.selectedRecordId}
-                            onfieldoverride={handleFieldOverride}
-                        ></c-duplicate-field-row>
+                        <tr key={row.fieldName} class="slds-hint-parent">
+                            <td class="slds-cell-wrap">
+                                <span class="slds-text-body_small slds-text-color_default">{row.fieldLabel}</span>
+                            </td>
+                            <template for:each={row.values} for:item="val">
+                                <td key={val.recordId} class="slds-cell-wrap">
+                                    <div class="slds-form-element">
+                                        <div class="slds-form-element__control">
+                                            <span class="slds-radio">
+                                                <input type="radio" name={row.fieldName}
+                                                    id={val.inputId} value={val.recordId}
+                                                    checked={val.isSelected} data-field-name={row.fieldName}
+                                                    onchange={handleRadioChange}
+                                                />
+                                                <label class="slds-radio__label" for={val.inputId}>
+                                                    <span class="slds-radio_faux"></span>
+                                                    <span class="slds-form-element__label slds-truncate" title={val.value}>
+                                                        {val.value}
+                                                    </span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </template>
+                        </tr>
                     </template>
                 </tbody>
             </table>

@@ -50,7 +50,6 @@
 		<members>duplicateClusterList</members>
 		<members>duplicateClusterListItem</members>
 		<members>duplicateFieldComparisonTable</members>
-		<members>duplicateFieldRow</members>
 		<members>duplicateFilterBar</members>
 		<members>duplicateManagementConsole</members>
 		<members>duplicateMergeActions</members>

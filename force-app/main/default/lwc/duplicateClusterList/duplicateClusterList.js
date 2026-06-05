@@ -12,7 +12,7 @@ export default class DuplicateClusterList extends LightningElement {
     _objectType = null;
     _status = 'Open';
     _minScore = 0;
-    pageSize = 50;
+    pageSize = 10;
 
     @api
     get objectType() {

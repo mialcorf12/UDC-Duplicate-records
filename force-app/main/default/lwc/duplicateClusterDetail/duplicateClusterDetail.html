@@ -15,9 +15,9 @@
         <template if:true={hasData}>
             <!-- Cluster Header -->
             <div class="slds-card slds-var-m-bottom_small">
-                <div class="slds-card__header slds-grid">
+                <div class="slds-card__header slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
                     <header class="slds-media slds-media_center slds-has-flexi-truncate">
-                        <div class="slds-media__body">
+                        <div class="slds-no-flex">
                             <h2 class="slds-card__header-title">
                                 <span>{cluster.Name}</span>
                             </h2>
@@ -27,12 +27,10 @@
                             <span class="slds-badge">{cluster.Status__c}</span>
                         </div>
                     </header>
-                </div>
-                <div class="slds-card__body slds-card__body_inner">
-                    <div class="slds-grid slds-gutters">
+                    <div class="slds-no-flex slds-grid slds-gutters_small slds-grid_vertical-align-center">
                         <div class="slds-col">
                             <p class="slds-text-body_small">
-                                <strong>Score:</strong> {cluster.ClusterScore__c}
+                                <strong>Detected:</strong> {formattedDate}
                             </p>
                         </div>
                         <div class="slds-col">
@@ -42,7 +40,7 @@
                         </div>
                         <div class="slds-col">
                             <p class="slds-text-body_small">
-                                <strong>Detected:</strong> {formattedDate}
+                                <strong>Score:</strong> {cluster.ClusterScore__c}
                             </p>
                         </div>
                     </div>
@@ -54,43 +52,31 @@
                 <div class="slds-card__header">
                     <h2 class="slds-card__header-title">Select Master Record</h2>
                 </div>
-                <div class="slds-card__body slds-card__body_inner">
-                    <fieldset class="slds-form-element">
-                        <legend class="slds-form-element__legend slds-form-element__label">
-                            Master Record
-                        </legend>
-                        <div class="slds-form-element__control slds-grid slds-wrap">
-                            <template for:each={memberOptions} for:item="opt">
-                                <span key={opt.recordId} class="slds-radio slds-var-m-right_medium">
-                                    <input
-                                        type="radio"
-                                        name="masterRecord"
-                                        id={opt.inputId}
-                                        value={opt.recordId}
-                                        checked={opt.isSelected}
-                                        aria-label={opt.label}
-                                        title={opt.label}
-                                        onchange={handleMasterChange}
-                                    />
-                                    <label class="slds-radio__label" for={opt.inputId}>
-                                        <span class="slds-radio_faux"></span>
-                                        <span class="slds-form-element__label">
-                                            {opt.label}
-                                        </span>
-                                    </label>
-                                </span>
-                            </template>
-                        </div>
-                    </fieldset>
-                </div>
             </div>
+
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout" role="grid">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th scope="col" style="width: 120px;">
+                            <div class="slds-truncate" title="Select Master Record">Master</div>
+                        </th>
+                        <template for:each={memberOptions} for:item="opt">
+                            <th key={opt.recordId} scope="col">
+                                <div class="slds-truncate">
+                                    <input type="radio" name="masterRecord"
+                                        id={opt.inputId} value={opt.recordId}
+                                        checked={opt.isSelected} aria-label={opt.label}
+                                        title={opt.label} onchange={handleMasterChange} />
+                                </div>
+                            </th>
+                        </template>
+                    </tr>
+                </thead>
+            </table>
 
             <!-- Field Comparison Table -->
             <div class="slds-card slds-var-m-bottom_small">
-                <div class="slds-card__header">
-                    <h2 class="slds-card__header-title">Field Comparison</h2>
-                </div>
-                <div class="slds-card__body">
+                <div class="slds-card__body" style="margin-top: 0;">
                     <c-duplicate-field-comparison-table
                         members={parsedMembers}
                         field-override-map={fieldOverrideMap}
