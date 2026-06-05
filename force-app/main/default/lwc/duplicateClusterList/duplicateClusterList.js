@@ -7,6 +7,7 @@ export default class DuplicateClusterList extends LightningElement {
     @track pageNumber = 1;
     @track isLoadingMore = false;
     @track errorMessage = null;
+    @track isWireResolved = false;
 
     _objectType = null;
     _status = 'Open';
@@ -53,6 +54,7 @@ export default class DuplicateClusterList extends LightningElement {
     wiredClusters({ data, error }) {
         this.isLoadingMore = false;
         this.errorMessage = null;
+        this.isWireResolved = true;
 
         if (data) {
             const incoming = data.clusters || [];
@@ -70,7 +72,7 @@ export default class DuplicateClusterList extends LightningElement {
     }
 
     get isLoading() {
-        return !this.clusters.length && !this.errorMessage && this.pageNumber === 1;
+        return !this.isWireResolved;
     }
 
     get hasClusters() {

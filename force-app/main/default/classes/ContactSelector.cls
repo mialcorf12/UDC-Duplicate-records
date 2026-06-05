@@ -32,7 +32,6 @@ public with sharing class ContactSelector {
             FROM   Contact
             WHERE  Email_Block__c IN :blockKeys
             AND    IsDeleted = false
-            WITH   SECURITY_ENFORCED
         ];
     }
 
@@ -60,7 +59,6 @@ public with sharing class ContactSelector {
             FROM   Contact
             WHERE  Phone_Block__c IN :blockKeys
             AND    IsDeleted = false
-            WITH   SECURITY_ENFORCED
         ];
     }
 
@@ -88,7 +86,6 @@ public with sharing class ContactSelector {
             FROM   Contact
             WHERE  Name_Block__c IN :blockKeys
             AND    IsDeleted = false
-            WITH   SECURITY_ENFORCED
         ];
     }
 
@@ -111,7 +108,6 @@ public with sharing class ContactSelector {
                    Account.Name
             FROM   Contact
             WHERE  Id IN :ids
-            WITH   SECURITY_ENFORCED
         ];
     }
 }
