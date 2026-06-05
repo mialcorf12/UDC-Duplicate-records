@@ -2,7 +2,7 @@
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <description>Grants CRUD access to all Duplicate Management custom objects and read access to DuplicateSettings custom metadata. Assign to admin users who manage the duplicate console.</description>
     <label>Duplicate Management Admin</label>
-    <userLicense>Salesforce</userLicense>
+
 
     <!-- ── Object Permissions ── -->
 

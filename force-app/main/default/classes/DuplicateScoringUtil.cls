@@ -135,9 +135,9 @@ public with sharing class DuplicateScoringUtil {
 
         // Count matches
         for (Integer i = 0; i < len1; i++) {
-            Integer start = Math.max(0, i - matchWindow);
-            Integer end   = Math.min(len2 - 1, i + matchWindow);
-            for (Integer j = start; j <= end; j++) {
+            Integer start    = Math.max(0, i - matchWindow);
+            Integer matchEnd = Math.min(len2 - 1, i + matchWindow);
+            for (Integer j = start; j <= matchEnd; j++) {
                 if (s2Matched[j]) { continue; }
                 if (s1.charAt(i) != s2.charAt(j)) { continue; }
                 s1Matched[i] = true;
