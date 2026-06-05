@@ -85,12 +85,8 @@
     </fieldPermissions>
 
     <!-- ── Field Permissions: DuplicateClusterMember__c ── -->
+    <!-- Note: Cluster__c (Master-Detail) is system-managed — FLS not deployable -->
 
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateClusterMember__c.Cluster__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>DuplicateClusterMember__c.RecordId__c</field>
