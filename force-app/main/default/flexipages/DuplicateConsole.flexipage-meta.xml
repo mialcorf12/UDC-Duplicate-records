@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <masterLabel>Duplicate Management Console</masterLabel>
-    <template>
-        <name>lightning_app_page_1_col</name>
-    </template>
-    <pageType>AppPage</pageType>
     <flexiPageRegions>
-        <name>main</name>
-        <type>Region</type>
-        <mode>replace</mode>
         <itemInstances>
             <componentInstance>
                 <componentName>c:duplicateManagementConsole</componentName>
+                <identifier>c_duplicateManagementConsole</identifier>
             </componentInstance>
         </itemInstances>
+        <name>main</name>
+        <type>Region</type>
     </flexiPageRegions>
+    <masterLabel>Duplicate Management Console</masterLabel>
+    <template>
+        <name>flexipage:defaultAppHomeTemplate</name>
+    </template>
+    <type>AppPage</type>
 </FlexiPage>

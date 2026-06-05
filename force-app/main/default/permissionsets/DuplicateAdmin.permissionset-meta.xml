@@ -84,29 +84,8 @@
         <readable>true</readable>
     </fieldPermissions>
 
-    <!-- ── Field Permissions: DuplicateClusterMember__c ── -->
-    <!-- Note: Cluster__c (Master-Detail) is system-managed — FLS not deployable -->
-
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateClusterMember__c.RecordId__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateClusterMember__c.ObjectType__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateClusterMember__c.IsMaster__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateClusterMember__c.FieldSnapshotJSON__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
+    <!-- DuplicateClusterMember__c field FLS omitted — object CRUD covers access.
+         Required fields cannot be deployed via fieldPermissions in managed metadata. -->
 
     <!-- ── Field Permissions: DuplicateIgnore__c ── -->
 
