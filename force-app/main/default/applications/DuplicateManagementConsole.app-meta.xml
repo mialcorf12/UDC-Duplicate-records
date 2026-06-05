@@ -13,6 +13,6 @@
     <label>Duplicate Management Console</label>
     <navType>Standard</navType>
     <setupExperience>all</setupExperience>
-    <tabs>standard-home</tabs>
+    <tabs>Duplicate_Management_Console</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>
