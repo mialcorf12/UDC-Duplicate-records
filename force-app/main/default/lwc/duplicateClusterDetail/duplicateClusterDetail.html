@@ -1,20 +1,20 @@
 <template>
     <template if:true={hasClusterId}>
         <template if:true={isLoading}>
-            <div class="slds-align_absolute-center slds-p-around_large">
+            <div class="slds-align_absolute-center slds-var-p-around_large">
                 <lightning-spinner alternative-text="Loading cluster details…" size="medium"></lightning-spinner>
             </div>
         </template>
 
         <template if:true={hasError}>
-            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-around_small" role="alert">
+            <div class="slds-notify slds-notify_alert slds-theme_error slds-var-m-around_small" role="alert">
                 <p>{errorMessage}</p>
             </div>
         </template>
 
         <template if:true={hasData}>
             <!-- Cluster Header -->
-            <div class="slds-card slds-m-bottom_small">
+            <div class="slds-card slds-var-m-bottom_small">
                 <div class="slds-card__header slds-grid">
                     <header class="slds-media slds-media_center slds-has-flexi-truncate">
                         <div class="slds-media__body">
@@ -23,7 +23,7 @@
                             </h2>
                         </div>
                         <div class="slds-no-flex">
-                            <span class="slds-badge slds-m-right_x-small">{cluster.ObjectType__c}</span>
+                            <span class="slds-badge slds-var-m-right_x-small">{cluster.ObjectType__c}</span>
                             <span class="slds-badge">{cluster.Status__c}</span>
                         </div>
                     </header>
@@ -50,24 +50,26 @@
             </div>
 
             <!-- Master Record Selector -->
-            <div class="slds-card slds-m-bottom_small">
+            <div class="slds-card slds-var-m-bottom_small">
                 <div class="slds-card__header">
                     <h2 class="slds-card__header-title">Select Master Record</h2>
                 </div>
                 <div class="slds-card__body slds-card__body_inner">
                     <fieldset class="slds-form-element">
-                        <legend class="slds-form-element__legend slds-form-element__label slds-assistive-text">
+                        <legend class="slds-form-element__legend slds-form-element__label">
                             Master Record
                         </legend>
                         <div class="slds-form-element__control slds-grid slds-wrap">
                             <template for:each={memberOptions} for:item="opt">
-                                <span key={opt.recordId} class="slds-radio slds-m-right_medium">
+                                <span key={opt.recordId} class="slds-radio slds-var-m-right_medium">
                                     <input
                                         type="radio"
                                         name="masterRecord"
                                         id={opt.inputId}
                                         value={opt.recordId}
                                         checked={opt.isSelected}
+                                        aria-label={opt.label}
+                                        title={opt.label}
                                         onchange={handleMasterChange}
                                     />
                                     <label class="slds-radio__label" for={opt.inputId}>
@@ -84,7 +86,7 @@
             </div>
 
             <!-- Field Comparison Table -->
-            <div class="slds-card slds-m-bottom_small">
+            <div class="slds-card slds-var-m-bottom_small">
                 <div class="slds-card__header">
                     <h2 class="slds-card__header-title">Field Comparison</h2>
                 </div>
@@ -98,7 +100,7 @@
             </div>
 
             <!-- Merge Actions -->
-            <div class="slds-card slds-m-bottom_small">
+            <div class="slds-card slds-var-m-bottom_small">
                 <div class="slds-card__body slds-card__body_inner">
                     <c-duplicate-merge-actions
                         cluster-id={clusterId}

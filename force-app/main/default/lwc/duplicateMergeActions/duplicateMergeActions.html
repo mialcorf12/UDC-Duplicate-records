@@ -31,7 +31,7 @@
         <!-- Status badge for polling feedback -->
         <template if:true={currentStep}>
             <div class="slds-col">
-                <span class="slds-badge slds-badge_lightest slds-m-left_small">
+                <span class="slds-badge slds-badge_lightest slds-var-m-left_small">
                     {currentStep}
                 </span>
             </div>
@@ -39,7 +39,7 @@
 
         <!-- Error message -->
         <template if:true={errorMessage}>
-            <div class="slds-col slds-size_1-of-1 slds-m-top_x-small">
+            <div class="slds-col slds-size_1-of-1 slds-var-m-top_x-small">
                 <p class="slds-text-color_error slds-text-body_small">
                     {errorMessage}
                 </p>

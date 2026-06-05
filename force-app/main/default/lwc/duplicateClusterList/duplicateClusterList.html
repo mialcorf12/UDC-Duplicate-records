@@ -2,7 +2,7 @@
     <div class="slds-scrollable_y cluster-list-container">
         <!-- Loading state -->
         <template if:true={isLoading}>
-            <div class="slds-align_absolute-center slds-p-around_medium">
+            <div class="slds-align_absolute-center slds-var-p-around_medium">
                 <lightning-spinner
                     alternative-text="Loading clusters…"
                     size="small"
@@ -12,7 +12,7 @@
 
         <!-- Error state -->
         <template if:true={hasError}>
-            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-around_small" role="alert">
+            <div class="slds-notify slds-notify_alert slds-theme_error slds-var-m-around_small" role="alert">
                 <p>{errorMessage}</p>
             </div>
         </template>
@@ -31,7 +31,7 @@
                     </template>
                 </ul>
                 <template if:true={showLoadMore}>
-                    <div class="slds-align_absolute-center slds-p-around_small">
+                    <div class="slds-align_absolute-center slds-var-p-around_small">
                         <lightning-button
                             label="Load More"
                             variant="neutral"
@@ -45,7 +45,7 @@
             <!-- Empty state -->
             <template if:false={hasClusters}>
                 <template if:false={hasError}>
-                    <div class="slds-illustration slds-illustration_small slds-p-around_large">
+                    <div class="slds-illustration slds-illustration_small slds-var-p-around_large">
                         <div class="slds-text-longform slds-text-align_center">
                             <p class="slds-text-heading_medium">No duplicate clusters found</p>
                             <p class="slds-text-body_regular slds-text-color_weak">
