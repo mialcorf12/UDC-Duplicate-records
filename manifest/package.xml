@@ -38,7 +38,10 @@
 		<name>CustomObject</name>
 	</types>
 	<types>
-		<members>DuplicateConsole</members>
+		<members>Duplicate_Management_Console</members>
+		<name>CustomTab</name>
+	</types>
+	<types>
 		<members>Duplicate_Management_Console</members>
 		<name>FlexiPage</name>
 	</types>
