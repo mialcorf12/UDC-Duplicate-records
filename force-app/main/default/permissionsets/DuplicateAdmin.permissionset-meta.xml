@@ -3,7 +3,6 @@
     <description>Grants CRUD access to all Duplicate Management custom objects and read access to DuplicateSettings custom metadata. Assign to admin users who manage the duplicate console.</description>
     <label>Duplicate Management Admin</label>
 
-
     <!-- ── Object Permissions ── -->
 
     <objectPermissions>
@@ -47,17 +46,8 @@
     </objectPermissions>
 
     <!-- ── Field Permissions: DuplicateCluster__c ── -->
+    <!-- Required fields omitted: ObjectType__c, Status__c (cannot deploy FLS on required fields) -->
 
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateCluster__c.ObjectType__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateCluster__c.Status__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>DuplicateCluster__c.ClusterScore__c</field>
@@ -84,16 +74,23 @@
         <readable>true</readable>
     </fieldPermissions>
 
-    <!-- DuplicateClusterMember__c field FLS omitted — object CRUD covers access.
-         Required fields cannot be deployed via fieldPermissions in managed metadata. -->
-
-    <!-- ── Field Permissions: DuplicateIgnore__c ── -->
+    <!-- ── Field Permissions: DuplicateClusterMember__c ── -->
+    <!-- Required fields omitted: Cluster__c (MD), RecordId__c, ObjectType__c -->
 
     <fieldPermissions>
         <editable>true</editable>
-        <field>DuplicateIgnore__c.PairKey__c</field>
+        <field>DuplicateClusterMember__c.IsMaster__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateClusterMember__c.FieldSnapshotJSON__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+
+    <!-- ── Field Permissions: DuplicateIgnore__c ── -->
+    <!-- Required fields omitted: PairKey__c -->
+
     <fieldPermissions>
         <editable>true</editable>
         <field>DuplicateIgnore__c.IgnoredBy__c</field>
@@ -111,6 +108,7 @@
     </fieldPermissions>
 
     <!-- ── Field Permissions: DuplicateMergeAudit__c ── -->
+    <!-- Required fields omitted: MasterRecordId__c, MergeType__c, Status__c -->
 
     <fieldPermissions>
         <editable>true</editable>
@@ -119,17 +117,7 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>DuplicateMergeAudit__c.MasterRecordId__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>DuplicateMergeAudit__c.MergedRecordIds__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateMergeAudit__c.Status__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -150,11 +138,6 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>DuplicateMergeAudit__c.FieldOverridesJSON__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>DuplicateMergeAudit__c.MergeType__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
