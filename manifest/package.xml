@@ -65,5 +65,11 @@
         <name>FlexiPage</name>
     </types>
 
+    <!-- Lightning Apps -->
+    <types>
+        <members>DuplicateManagementConsole</members>
+        <name>CustomApplication</name>
+    </types>
+
     <version>66.0</version>
 </Package>
