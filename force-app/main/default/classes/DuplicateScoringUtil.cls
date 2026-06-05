@@ -237,17 +237,23 @@ public with sharing class DuplicateScoringUtil {
     }
 
     private static String getCompanyName(SObject record) {
-        // For Lead, Company is a direct field
-        Object companyObj = record.get('Company');
-        if (companyObj != null) {
-            return ((String) companyObj).trim().toLowerCase();
-        }
-        // For Contact, look at Account.Name
-        SObject acct = record.getSObject('Account');
-        if (acct != null) {
-            String name = (String) acct.get('Name');
-            if (String.isNotBlank(name)) {
-                return name.trim().toLowerCase();
+        // Determine object type to avoid Invalid field exceptions
+        String objectType = record.getSObjectType().getDescribe().getName();
+
+        if (objectType == 'Lead') {
+            // Lead.Company is a direct field
+            Object companyObj = record.get('Company');
+            if (companyObj != null) {
+                return ((String) companyObj).trim().toLowerCase();
+            }
+        } else {
+            // Contact: traverse Account relationship
+            SObject acct = record.getSObject('Account');
+            if (acct != null) {
+                String name = (String) acct.get('Name');
+                if (String.isNotBlank(name)) {
+                    return name.trim().toLowerCase();
+                }
             }
         }
         return '';
