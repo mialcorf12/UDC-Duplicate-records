@@ -1,4 +1,69 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <!-- Custom Objects -->
+    <types>
+        <members>Contact</members>
+        <members>Lead</members>
+        <members>DuplicateCluster__c</members>
+        <members>DuplicateClusterMember__c</members>
+        <members>DuplicateIgnore__c</members>
+        <members>DuplicateMergeAudit__c</members>
+        <members>DuplicateSettings__mdt</members>
+        <name>CustomObject</name>
+    </types>
+
+    <!-- Apex Classes -->
+    <types>
+        <members>BatchLaunchController</members>
+        <members>ContactDuplicateTriggerHandler</members>
+        <members>ContactSelector</members>
+        <members>CrossObjectMergeQueueable</members>
+        <members>DuplicateClusterController</members>
+        <members>DuplicateClusterSelector</members>
+        <members>DuplicateDetectionBatch</members>
+        <members>DuplicateIgnoreSelector</members>
+        <members>DuplicateIgnoreService</members>
+        <members>DuplicateMergeController</members>
+        <members>DuplicateMergeService</members>
+        <members>DuplicateScoringUtil</members>
+        <members>LeadDuplicateTriggerHandler</members>
+        <members>LeadSelector</members>
+        <members>MergeStatusController</members>
+        <name>ApexClass</name>
+    </types>
+
+    <!-- Apex Triggers -->
+    <types>
+        <members>ContactDuplicateTrigger</members>
+        <members>LeadDuplicateTrigger</members>
+        <name>ApexTrigger</name>
+    </types>
+
+    <!-- Lightning Web Components -->
+    <types>
+        <members>duplicateClusterDetail</members>
+        <members>duplicateClusterList</members>
+        <members>duplicateClusterListItem</members>
+        <members>duplicateFieldComparisonTable</members>
+        <members>duplicateFieldRow</members>
+        <members>duplicateFilterBar</members>
+        <members>duplicateManagementConsole</members>
+        <members>duplicateMergeActions</members>
+        <members>duplicateMergeProgress</members>
+        <name>LightningComponentBundle</name>
+    </types>
+
+    <!-- Permission Sets -->
+    <types>
+        <members>DuplicateAdmin</members>
+        <name>PermissionSet</name>
+    </types>
+
+    <!-- Flexipages (Lightning App Pages) -->
+    <types>
+        <members>DuplicateConsole</members>
+        <name>FlexiPage</name>
+    </types>
+
     <version>66.0</version>
 </Package>
