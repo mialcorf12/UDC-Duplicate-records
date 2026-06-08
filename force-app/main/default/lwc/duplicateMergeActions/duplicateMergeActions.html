@@ -18,22 +18,10 @@
             ></lightning-button>
         </div>
 
-        <!-- Spinner -->
-        <template if:true={isLoading}>
-            <div class="slds-col slds-no-flex">
-                <lightning-spinner
-                    alternative-text="Processing…"
-                    size="small"
-                ></lightning-spinner>
-            </div>
-        </template>
-
-        <!-- Status badge for polling feedback -->
+        <!-- Merge progress -->
         <template if:true={currentStep}>
-            <div class="slds-col">
-                <span class="slds-badge slds-badge_lightest slds-var-m-left_small">
-                    {currentStep}
-                </span>
+            <div class="slds-col slds-size_1-of-1 slds-var-m-top_x-small">
+                <c-duplicate-merge-progress step={currentStep}></c-duplicate-merge-progress>
             </div>
         </template>
 

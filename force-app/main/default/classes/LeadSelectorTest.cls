@@ -46,7 +46,7 @@ private class LeadSelectorTest {
         // Convert the lead
         Database.LeadConvert lc = new Database.LeadConvert();
         lc.setLeadId(toConvert.Id);
-        lc.setConvertedStatus('Closed - Converted');
+        lc.setConvertedStatus([SELECT MasterLabel FROM LeadStatus WHERE IsConverted = true LIMIT 1].MasterLabel);
         lc.setDoNotCreateOpportunity(true);
         Database.convertLead(lc);
 

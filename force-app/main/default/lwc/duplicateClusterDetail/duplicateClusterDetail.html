@@ -86,19 +86,19 @@
             </div>
 
             <!-- Merge Actions -->
-            <div class="slds-card slds-var-m-bottom_small">
-                <div class="slds-card__body slds-card__body_inner">
-                    <c-duplicate-merge-actions
-                        cluster-id={clusterId}
-                        master-id={selectedMasterId}
-                        field-override-map={fieldOverrideMap}
-                        onmergedone={handleMergeDone}
-                    ></c-duplicate-merge-actions>
+            <template if:true={isMergeAllowed}>
+                <div class="slds-card slds-var-m-bottom_small">
+                    <div class="slds-card__body slds-card__body_inner">
+                        <c-duplicate-merge-actions
+                            cluster-id={clusterId}
+                            master-id={selectedMasterId}
+                            field-override-map={resolvedFieldOverrides}
+                            onmergedone={handleMergeDone}
+                        ></c-duplicate-merge-actions>
+                    </div>
                 </div>
-            </div>
+            </template>
 
-            <!-- Merge Progress -->
-            <c-duplicate-merge-progress step={mergeStep}></c-duplicate-merge-progress>
         </template>
     </template>
     <template if:false={hasClusterId}>

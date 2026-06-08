@@ -49,17 +49,17 @@ export default class DuplicateMergeActions extends LightningElement {
             } else if (result.success) {
                 // Same-object: immediate success
                 this.isLoading = false;
-                this.currentStep = null;
+                this.currentStep = 'Completed';
                 this._fireMergeDone(true, result.message || 'Merge completed successfully.');
             } else {
                 this.isLoading = false;
-                this.currentStep = null;
+                this.currentStep = 'Failed';
                 this.errorMessage = result.message || 'Merge failed.';
                 this._fireMergeDone(false, this.errorMessage);
             }
         } catch (error) {
             this.isLoading = false;
-            this.currentStep = null;
+            this.currentStep = 'Failed';
             this.errorMessage = error.body ? error.body.message : 'Merge failed unexpectedly.';
             this._fireMergeDone(false, this.errorMessage);
         }
@@ -96,19 +96,19 @@ export default class DuplicateMergeActions extends LightningElement {
             if (status === 'Completed') {
                 this._stopPolling();
                 this.isLoading = false;
-                this.currentStep = null;
+                this.currentStep = 'Completed';
                 this._fireMergeDone(true, result.message || 'Merge completed.');
             } else if (status === 'Failed') {
                 this._stopPolling();
                 this.isLoading = false;
-                this.currentStep = null;
+                this.currentStep = 'Failed';
                 this.errorMessage = result.message || 'Merge failed during processing.';
                 this._fireMergeDone(false, this.errorMessage);
             } else if (this._pollCount >= MAX_POLL_RETRIES) {
                 // Max retries reached — stop and report timeout
                 this._stopPolling();
                 this.isLoading = false;
-                this.currentStep = null;
+                this.currentStep = 'Failed';
                 this.errorMessage = 'Merge is taking longer than expected. Check audit log for status.';
                 this._fireMergeDone(false, this.errorMessage);
             } else {
@@ -123,7 +123,7 @@ export default class DuplicateMergeActions extends LightningElement {
             if (this._pollCount >= MAX_POLL_RETRIES) {
                 this._stopPolling();
                 this.isLoading = false;
-                this.currentStep = null;
+                this.currentStep = 'Failed';
                 this.errorMessage = 'Unable to retrieve merge status. Check audit log.';
                 this._fireMergeDone(false, this.errorMessage);
             } else {

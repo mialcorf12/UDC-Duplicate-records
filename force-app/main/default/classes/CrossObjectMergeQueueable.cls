@@ -60,7 +60,8 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             lc.setLeadId(leadId);
             lc.setContactId(contactId);
             lc.setDoNotCreateOpportunity(true);
-            lc.setConvertedStatus('Closed - Converted');
+            LeadStatus convertedLeadStatus = [SELECT MasterLabel FROM LeadStatus WHERE IsConverted = true LIMIT 1];
+            lc.setConvertedStatus(convertedLeadStatus.MasterLabel);
 
             Database.LeadConvertResult lcResult = Database.convertLead(lc);
 
@@ -100,9 +101,10 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             }
 
             // ── Step 4: Apply fieldOverrides to master Contact ──
-            if (!fieldOverrides.isEmpty()) {
-                for (String fieldName : fieldOverrides.keySet()) {
-                    masterContact.put(fieldName, fieldOverrides.get(fieldName));
+            Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+            if (!safeOverrides.isEmpty()) {
+                for (String fieldName : safeOverrides.keySet()) {
+                    masterContact.put(fieldName, safeOverrides.get(fieldName));
                 }
                 update masterContact;
             }
@@ -125,6 +127,20 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             audit.ErrorMessage__c = ex.getMessage();
             update audit;
         }
+    }
+
+    private static Map<String, String> sanitizeContactOverrides(Map<String, String> overrides) {
+        if (overrides == null || overrides.isEmpty()) return new Map<String, String>();
+        final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account' };
+        Map<String, String> clean = new Map<String, String>();
+        for (String key : overrides.keySet()) {
+            if (BLOCKED.contains(key)) continue;
+            clean.put(key, overrides.get(key));
+        }
+        if (overrides.containsKey('Account') && !overrides.containsKey('AccountId')) {
+            clean.put('AccountId', overrides.get('Account'));
+        }
+        return clean;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

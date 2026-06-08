@@ -210,7 +210,7 @@ private class DuplicateScoringUtilTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @isTest
-    static void testBuildSnapshotJSON_contactHasOnlyFiveFields() {
+    static void testBuildSnapshotJSON_contactHasSixFields() {
         Contact c = new Contact(
             FirstName = 'John',
             LastName  = 'Smith',
@@ -225,18 +225,37 @@ private class DuplicateScoringUtilTest {
         Test.stopTest();
 
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
-        System.assertEquals(5, parsed.size(), 'Snapshot should contain exactly 5 fields');
+        System.assertEquals(6, parsed.size(), 'Contact snapshot should contain exactly 6 fields');
         System.assert(parsed.containsKey('Email'),     'Must contain Email');
         System.assert(parsed.containsKey('Phone'),     'Must contain Phone');
         System.assert(parsed.containsKey('FirstName'), 'Must contain FirstName');
         System.assert(parsed.containsKey('LastName'),  'Must contain LastName');
         System.assert(parsed.containsKey('Company'),   'Must contain Company');
+        System.assert(parsed.containsKey('AccountId'), 'Must contain AccountId');
         System.assertEquals('john@example.com', parsed.get('Email'), 'Email value should match');
         System.assertEquals('John', parsed.get('FirstName'), 'FirstName value should match');
+        System.assertEquals('', parsed.get('AccountId'), 'AccountId should be empty when no account');
     }
 
     @isTest
-    static void testBuildSnapshotJSON_leadHasOnlyFiveFields() {
+    static void testBuildSnapshotJSON_contactWithAccount() {
+        Account a = new Account(Name = 'Test Corp');
+        insert a;
+        Contact c = new Contact(FirstName = 'John', LastName = 'Smith', Email = 'john@example.com', AccountId = a.Id);
+        insert c;
+        Contact retrieved = [SELECT Id, FirstName, LastName, Email, Phone, AccountId, Account.Name FROM Contact WHERE Id = :c.Id];
+
+        Test.startTest();
+        String json = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Contact');
+        Test.stopTest();
+
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
+        System.assertEquals(String.valueOf(a.Id), parsed.get('AccountId'), 'AccountId should match the linked account');
+        System.assertEquals('Test Corp', parsed.get('Company'), 'Company should reflect Account.Name');
+    }
+
+    @isTest
+    static void testBuildSnapshotJSON_leadHasSixFields() {
         Lead l = new Lead(
             FirstName = 'Jane',
             LastName  = 'Doe',
@@ -252,9 +271,10 @@ private class DuplicateScoringUtilTest {
         Test.stopTest();
 
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
-        System.assertEquals(5, parsed.size(), 'Snapshot should contain exactly 5 fields');
+        System.assertEquals(6, parsed.size(), 'Lead snapshot should contain exactly 6 fields');
         System.assertEquals('Acme Corp', parsed.get('Company'), 'Company value should match');
         System.assertEquals('jane@company.com', parsed.get('Email'), 'Email value should match');
+        System.assertEquals('', parsed.get('AccountId'), 'AccountId should always be empty for Lead');
     }
 
     @isTest
@@ -268,9 +288,8 @@ private class DuplicateScoringUtilTest {
         Test.stopTest();
 
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
-        // Verify no extra keys beyond the 5 expected ones
-        Set<String> expectedKeys = new Set<String>{ 'Email', 'Phone', 'FirstName', 'LastName', 'Company' };
-        System.assertEquals(expectedKeys, parsed.keySet(), 'Snapshot must contain only the 5 expected fields');
+        Set<String> expectedKeys = new Set<String>{ 'Email', 'Phone', 'FirstName', 'LastName', 'Company', 'AccountId' };
+        System.assertEquals(expectedKeys, parsed.keySet(), 'Snapshot must contain only the 6 expected fields');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

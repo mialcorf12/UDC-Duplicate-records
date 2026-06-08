@@ -123,15 +123,22 @@ public with sharing class DuplicateMergeService {
                 }
 
                 // Apply field overrides
-                if (fieldOverrides != null && !fieldOverrides.isEmpty()) {
-                    for (String fieldName : fieldOverrides.keySet()) {
-                        masterContact.put(fieldName, fieldOverrides.get(fieldName));
+                Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+                if (!safeOverrides.isEmpty()) {
+                    for (String fieldName : safeOverrides.keySet()) {
+                        masterContact.put(fieldName, safeOverrides.get(fieldName));
                     }
                     update masterContact;
                 }
 
                 // Merge (max 2 secondaries)
-                Database.merge(masterContact, secondaryContacts);
+                // Pass Id-only records to avoid INVALID_FIELD_FOR_INSERT_UPDATE caused by
+                // relationship fields (Account.Name) loaded on the queried SObjects.
+                List<Id> secondaryContactIds = new List<Id>();
+                for (Contact c : secondaryContacts) {
+                    secondaryContactIds.add(c.Id);
+                }
+                Database.merge(new Contact(Id = masterContact.Id), secondaryContactIds);
             }
 
             // ── Update cluster status ──
@@ -155,6 +162,20 @@ public with sharing class DuplicateMergeService {
         }
 
         return result;
+    }
+
+    private static Map<String, String> sanitizeContactOverrides(Map<String, String> overrides) {
+        if (overrides == null || overrides.isEmpty()) return new Map<String, String>();
+        final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account' };
+        Map<String, String> clean = new Map<String, String>();
+        for (String key : overrides.keySet()) {
+            if (BLOCKED.contains(key)) continue;
+            clean.put(key, overrides.get(key));
+        }
+        if (overrides.containsKey('Account') && !overrides.containsKey('AccountId')) {
+            clean.put('AccountId', overrides.get('Account'));
+        }
+        return clean;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
