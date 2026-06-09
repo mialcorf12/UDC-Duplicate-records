@@ -1,6 +1,7 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
 import getClusterDetail from '@salesforce/apex/DuplicateClusterController.getClusterDetail';
+import setMasterRecord from '@salesforce/apex/DuplicateClusterController.setMasterRecord';
 
 export default class DuplicateClusterDetail extends LightningElement {
     @track fieldOverrideMap = {};
@@ -131,7 +132,12 @@ export default class DuplicateClusterDetail extends LightningElement {
     }
 
     handleMasterChange(event) {
-        this.selectedMasterId = event.target.value;
+        const newMasterId = event.target.value;
+        this.selectedMasterId = newMasterId;
+        setMasterRecord({ clusterId: this._clusterId, memberRecordId: newMasterId })
+            .catch(error => {
+                this.errorMessage = error.body ? error.body.message : 'Failed to update master record.';
+            });
     }
 
     handleFieldOverride(event) {

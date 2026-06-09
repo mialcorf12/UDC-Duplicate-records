@@ -73,4 +73,28 @@ public with sharing class DuplicateClusterController {
             'members' => cluster.ClusterMembers__r
         };
     }
+
+    /**
+     * @description Sets IsMaster__c = true on the chosen member and clears it on all others
+     *              in the same cluster. Persists the user's master record selection.
+     *
+     * @param clusterId      Id of the DuplicateCluster__c.
+     * @param memberRecordId RecordId__c value of the member to promote as master.
+     */
+    @AuraEnabled
+    public static void setMasterRecord(String clusterId, String memberRecordId) {
+        if (String.isBlank(clusterId) || String.isBlank(memberRecordId)) {
+            throw new AuraHandledException('clusterId and memberRecordId are required');
+        }
+        List<DuplicateClusterMember__c> members = [
+            SELECT Id, RecordId__c, IsMaster__c
+            FROM DuplicateClusterMember__c
+            WHERE Cluster__c = :clusterId
+            WITH SECURITY_ENFORCED
+        ];
+        for (DuplicateClusterMember__c m : members) {
+            m.IsMaster__c = (m.RecordId__c == memberRecordId);
+        }
+        update members;
+    }
 }
