@@ -182,7 +182,7 @@ private class DuplicateMergeControllerTest {
 
         System.assertEquals(true, result.get('success'),
             'Mixed cluster merge should initiate successfully');
-        System.assertNotNull(result.get('jobId'),
+        System.assertNotEquals(null, result.get('jobId'),
             'Cross-object merge should return a non-null jobId');
         System.assert(String.isNotBlank((String) result.get('jobId')),
             'jobId should be a non-blank string');
@@ -302,6 +302,41 @@ private class DuplicateMergeControllerTest {
 
         System.assert(exceptionThrown,
             'AuraHandledException should be thrown for a non-existent cluster');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 9: Mixed cluster with two leads returns jobId
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void mixedClusterTwoLeadsReturnsJobId() {
+        Lead lead1 = new Lead(FirstName = 'Dual', LastName = 'L1', Company = 'Acme', Email = 'dual1@example.com');
+        Lead lead2 = new Lead(FirstName = 'Dual', LastName = 'L2', Company = 'Acme', Email = 'dual2@example.com');
+        Contact master = new Contact(FirstName = 'Dual', LastName = 'Master', Email = 'dual.master@example.com');
+        insert new List<SObject>{ lead1, lead2, master };
+
+        DuplicateCluster__c cluster = new DuplicateCluster__c(
+            ObjectType__c   = 'Mixed',
+            Status__c       = 'Open',
+            ClusterScore__c = 78.0,
+            DetectedDate__c = DateTime.now()
+        );
+        insert cluster;
+
+        insert new List<DuplicateClusterMember__c>{
+            new DuplicateClusterMember__c(Cluster__c = cluster.Id, RecordId__c = String.valueOf(master.Id), ObjectType__c = 'Contact', IsMaster__c = true),
+            new DuplicateClusterMember__c(Cluster__c = cluster.Id, RecordId__c = String.valueOf(lead1.Id),  ObjectType__c = 'Lead',    IsMaster__c = false),
+            new DuplicateClusterMember__c(Cluster__c = cluster.Id, RecordId__c = String.valueOf(lead2.Id),  ObjectType__c = 'Lead',    IsMaster__c = false)
+        };
+
+        Test.startTest();
+        Map<String, Object> result = DuplicateMergeController.mergeCluster(
+            String.valueOf(cluster.Id), String.valueOf(master.Id), null
+        );
+        Test.stopTest();
+
+        System.assertEquals(true, result.get('success'), '2-lead Mixed cluster merge should initiate successfully');
+        System.assertNotEquals(null, result.get('jobId'), 'Cross-object merge with 2 leads should return a non-null jobId');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

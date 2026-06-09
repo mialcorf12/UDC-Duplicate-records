@@ -35,25 +35,25 @@ public with sharing class DuplicateMergeController {
             }
 
             if (cluster.ObjectType__c == 'Mixed') {
-                // ── Cross-object path: find the Lead member ──
-                Id leadId    = null;
-                Id contactId = (Id) masterId;
+                // ── Cross-object path: collect all Lead members ──
+                List<Id> leadIds = new List<Id>();
+                Id contactId     = (Id) masterId;
 
                 for (DuplicateClusterMember__c m : cluster.ClusterMembers__r) {
                     if (m.ObjectType__c == 'Lead' &&
                         m.RecordId__c   != masterId) {
-                        leadId = (Id) m.RecordId__c;
+                        leadIds.add((Id) m.RecordId__c);
                     }
                 }
 
-                if (leadId == null) {
+                if (leadIds.isEmpty()) {
                     throw new AuraHandledException(
                         'No Lead member found in Mixed cluster: ' + clusterId
                     );
                 }
 
                 return DuplicateMergeService.initiateCrossObjectMerge(
-                    (Id) clusterId, leadId, contactId, fieldOverrides
+                    (Id) clusterId, leadIds, contactId, fieldOverrides
                 );
 
             } else {

@@ -184,18 +184,19 @@ public with sharing class DuplicateMergeService {
 
     /**
      * @description Initiates a cross-object (Lead → Contact) merge by enqueueing
-     *              a CrossObjectMergeQueueable job. Returns the async job ID for polling.
+     *              a CrossObjectMergeQueueable job. Supports N leads via self-chaining.
+     *              Returns the async job ID of the first job for polling.
      *
      * @param clusterId      The DuplicateCluster__c that owns this merge.
-     * @param leadId         The Lead to convert and merge.
+     * @param leadIds        All Lead IDs to convert and merge into the master Contact.
      * @param contactId      The master Contact to merge into.
      * @param fieldOverrides Map of field API name → winning value.
      * @return Map<String, Object>: { success: Boolean, jobId: String }
      */
     public static Map<String, Object> initiateCrossObjectMerge(
-        Id clusterId,
-        Id leadId,
-        Id contactId,
+        Id                  clusterId,
+        List<Id>            leadIds,
+        Id                  contactId,
         Map<String, String> fieldOverrides
     ) {
         Map<String, Object> result = new Map<String, Object>{
@@ -204,7 +205,7 @@ public with sharing class DuplicateMergeService {
         };
 
         Id jobId = System.enqueueJob(
-            new CrossObjectMergeQueueable(leadId, contactId, clusterId, fieldOverrides)
+            new CrossObjectMergeQueueable(leadIds, contactId, clusterId, fieldOverrides, null)
         );
 
         result.put('success', true);
