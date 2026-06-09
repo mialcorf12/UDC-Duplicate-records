@@ -113,4 +113,22 @@ public with sharing class DuplicateMergeController {
         // Update cluster status to Ignored
         update new DuplicateCluster__c(Id = cluster.Id, Status__c = 'Ignored');
     }
+
+    /**
+     * @description Launches a batch job that merges all Open clusters whose score is
+     *              at or above minScore, optionally filtered by objectType.
+     *
+     * @param minScore   Minimum ClusterScore__c (inclusive). Use 100 for exact matches only.
+     * @param objectType 'Contact', 'Lead', 'Mixed', or null / '' for all types.
+     * @return The AsyncApexJob Id of the launched batch as a String.
+     */
+    @AuraEnabled
+    public static String launchBulkMerge(Decimal minScore, String objectType) {
+        if (minScore == null || minScore < 0) {
+            throw new AuraHandledException('minScore must be a non-negative number');
+        }
+        String normalizedType = String.isBlank(objectType) ? null : objectType;
+        Id jobId = Database.executeBatch(new BulkMergeBatch(minScore, normalizedType), 1);
+        return String.valueOf(jobId);
+    }
 }
