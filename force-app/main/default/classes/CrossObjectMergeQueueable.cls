@@ -56,9 +56,12 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
 
         try {
             // ── Step 2: Convert Lead into the existing Contact ──
+            Contact masterForConvert = [SELECT AccountId FROM Contact WHERE Id = :contactId LIMIT 1];
+
             Database.LeadConvert lc = new Database.LeadConvert();
             lc.setLeadId(leadId);
             lc.setContactId(contactId);
+            lc.setAccountId(masterForConvert.AccountId);
             lc.setDoNotCreateOpportunity(true);
             LeadStatus convertedLeadStatus = [SELECT MasterLabel FROM LeadStatus WHERE IsConverted = true LIMIT 1];
             lc.setConvertedStatus(convertedLeadStatus.MasterLabel);
@@ -76,41 +79,48 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             // ── Step 3: Fetch master Contact + converted Contact ──
             Id convertedContactId = lcResult.getContactId();
 
-            List<Contact> contactsToMerge = [
-                SELECT Id, Email, Phone, FirstName, LastName, AccountId
-                FROM   Contact
-                WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }
-                WITH   SECURITY_ENFORCED
-            ];
+            if (convertedContactId != null && convertedContactId != contactId) {
+                // Lead produced a distinct Contact — merge it into master
+                List<Contact> contactsToMerge = [
+                    SELECT Id, Email, Phone, FirstName, LastName, AccountId
+                    FROM   Contact
+                    WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }
+                    WITH   SECURITY_ENFORCED
+                ];
 
-            Contact masterContact    = null;
-            Contact convertedContact = null;
-            for (Contact c : contactsToMerge) {
-                if (c.Id == contactId) {
-                    masterContact = c;
-                } else {
-                    convertedContact = c;
+                Contact masterContact    = null;
+                Contact convertedContact = null;
+                for (Contact c : contactsToMerge) {
+                    if (c.Id == contactId) { masterContact    = c; }
+                    else                   { convertedContact = c; }
+                }
+
+                if (masterContact    == null) throw new DuplicateMergeException('Master contact not found: '    + contactId);
+                if (convertedContact == null) throw new DuplicateMergeException('Converted contact not found: ' + convertedContactId);
+
+                // ── Step 4: Apply fieldOverrides ──
+                Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+                if (!safeOverrides.isEmpty()) {
+                    for (String fieldName : safeOverrides.keySet()) {
+                        masterContact.put(fieldName, safeOverrides.get(fieldName));
+                    }
+                    update masterContact;
+                }
+
+                // ── Step 5: Merge master with converted Contact ──
+                Database.merge(masterContact, convertedContact);
+
+            } else {
+                // Lead was absorbed directly into the existing Contact — no Contact merge needed.
+                Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+                if (!safeOverrides.isEmpty()) {
+                    Contact masterContact = new Contact(Id = contactId);
+                    for (String fieldName : safeOverrides.keySet()) {
+                        masterContact.put(fieldName, safeOverrides.get(fieldName));
+                    }
+                    update masterContact;
                 }
             }
-
-            if (masterContact == null) {
-                throw new DuplicateMergeException('Master contact not found: ' + contactId);
-            }
-            if (convertedContact == null) {
-                throw new DuplicateMergeException('Converted contact not found: ' + convertedContactId);
-            }
-
-            // ── Step 4: Apply fieldOverrides to master Contact ──
-            Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
-            if (!safeOverrides.isEmpty()) {
-                for (String fieldName : safeOverrides.keySet()) {
-                    masterContact.put(fieldName, safeOverrides.get(fieldName));
-                }
-                update masterContact;
-            }
-
-            // ── Step 5: Merge master with converted Contact ──
-            Database.merge(masterContact, convertedContact);
 
             // ── Step 6: Update cluster status ──
             if (clusterId != null) {

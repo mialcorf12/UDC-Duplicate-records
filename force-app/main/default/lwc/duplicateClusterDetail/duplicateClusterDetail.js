@@ -37,6 +37,17 @@ export default class DuplicateClusterDetail extends LightningElement {
             } else if (members.length > 0) {
                 this.selectedMasterId = members[0].RecordId__c;
             }
+
+            // Auto-select the first record for all fields when cluster is not Merged
+            const clusterStatus = data.cluster?.Status__c;
+            if (clusterStatus !== 'Merged' && clusterStatus !== 'Ignored' && members.length > 0) {
+                const firstId = members[0].RecordId__c || members[0].Id;
+                let firstSnapshot = {};
+                try { firstSnapshot = JSON.parse(members[0].FieldSnapshotJSON__c || '{}'); } catch (e) {}
+                const initialOverrides = {};
+                Object.keys(firstSnapshot).forEach((f) => { initialOverrides[f] = firstId; });
+                this.fieldOverrideMap = initialOverrides;
+            }
         } else if (error) {
             this.errorMessage = error.body
                 ? error.body.message
@@ -94,6 +105,20 @@ export default class DuplicateClusterDetail extends LightningElement {
     get isMergeAllowed() {
         const status = this.cluster?.Status__c;
         return status !== 'Merged' && status !== 'Ignored';
+    }
+
+    get isMerged() {
+        return this.cluster?.Status__c === 'Merged';
+    }
+
+    get isMasterDisabled() {
+        const status = this.cluster?.Status__c;
+        return status === 'Merged' || status === 'Ignored' || status === 'Stale';
+    }
+
+    get isReadOnly() {
+        const status = this.cluster?.Status__c;
+        return status === 'Ignored' || status === 'Stale';
     }
 
     get formattedDate() {

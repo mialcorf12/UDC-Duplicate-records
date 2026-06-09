@@ -19,6 +19,9 @@ export default class DuplicateFieldComparisonTable extends NavigationMixin(Light
     _parsedMembers = [];
 
     @api fieldOverrideMap = {};
+    @api isMerged = false;
+    @api isReadOnly = false;
+    @api masterRecordId;
 
     @api
     get members() {
@@ -83,7 +86,8 @@ export default class DuplicateFieldComparisonTable extends NavigationMixin(Light
                 value: m.snapshot[f.displayFieldName || f.fieldName] || '',
                 objectType: m.objectType,
                 inputId: `${f.fieldName}-${m.recordId}`,
-                isSelected: selectedRecordId === m.recordId
+                isSelected: selectedRecordId === m.recordId,
+                isMaster: m.recordId === this.masterRecordId
             }));
 
             return {
