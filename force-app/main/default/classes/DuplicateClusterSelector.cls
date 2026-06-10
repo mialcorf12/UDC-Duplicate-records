@@ -165,7 +165,7 @@ public with sharing class DuplicateClusterSelector {
         return [
             SELECT DAY_ONLY(DetectedDate__c) detectedDate
             FROM DuplicateCluster__c
-            WHERE Status__c != 'Open'
+            WHERE Status__c NOT IN ('Open', 'Archived')
             WITH SECURITY_ENFORCED
             GROUP BY DAY_ONLY(DetectedDate__c)
             ORDER BY DAY_ONLY(DetectedDate__c) DESC

@@ -50,7 +50,7 @@
                         <p class="slds-text-title_caps slds-var-m-bottom_x-small">Detect Duplicates</p>
                         <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
                             <div class="slds-col">
-                                <p class="slds-var-m-bottom_x-small"></p>
+                                <p class="slds-var-m-bottom_x-small">Last Detection Date: {lastDetectionDate}</p>
                             </div>
                         </div>
                         <div class="slds-var-p-around_small">
@@ -101,6 +101,13 @@
                                     onclick={handleBulkMerge}
                                 ></lightning-button>
                             </div>
+                        </div>
+                        <div class="slds-var-p-around_small">
+                            <template if:true={bulkMergeJobId}>
+                                <p class="slds-var-m-top_x-small slds-text-body_small slds-text-color_weak">
+                                    Job ID: {bulkMergeJobId}
+                                </p>
+                            </template>
                         </div>
                     </div>
                 </div>

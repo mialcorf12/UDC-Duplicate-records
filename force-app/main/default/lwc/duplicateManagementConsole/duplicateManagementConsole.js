@@ -12,12 +12,15 @@ export default class DuplicateManagementConsole extends LightningElement {
     @track minScore = 0;
 
     @track activeSections = ['clusters'];
+
     @track bulkMergeScore = 100;
     @track bulkMergeObjectType = '';
     @track isBulkMerging = false;
+    @track bulkMergeJobId = null;
 
     @track isDetecting = false;
     @track detectionJobId = null;
+    @track lastDetectionDate = null;
 
     @track archiveDate = null;
     @track archiveDateOptions = [];
@@ -34,7 +37,11 @@ export default class DuplicateManagementConsole extends LightningElement {
 
     connectedCallback() {
         getArchivableDates()
-            .then(options => { this.archiveDateOptions = options; })
+            .then(options => { 
+                this.archiveDateOptions = options; 
+                this.lastDetectionDate = options.length > 0 ? options[0].value : null;
+                this.isArchiving = options.length > 0 ? false : true;
+            })
             .catch(() => {});
     }
 
@@ -90,6 +97,7 @@ export default class DuplicateManagementConsole extends LightningElement {
         const objectType = this.bulkMergeObjectType || null;
         launchBulkMerge({ minScore: this.bulkMergeScore, objectType })
             .then(jobId => {
+                this.bulkMergeJobId = jobId;
                 this.dispatchEvent(new ShowToastEvent({
                     title: 'Bulk Merge Started',
                     message: `Job ID: ${jobId}`,
@@ -102,9 +110,6 @@ export default class DuplicateManagementConsole extends LightningElement {
                     message: error.body ? error.body.message : 'An unexpected error occurred.',
                     variant: 'error'
                 }));
-            })
-            .finally(() => {
-                this.isBulkMerging = false;
             });
     }
 
@@ -134,9 +139,6 @@ export default class DuplicateManagementConsole extends LightningElement {
                     message: error.body ? error.body.message : 'An unexpected error occurred.',
                     variant: 'error'
                 }));
-            })
-            .finally(() => {
-                this.isArchiving = false;
             });
     }
 }
