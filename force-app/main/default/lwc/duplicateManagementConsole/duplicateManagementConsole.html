@@ -42,37 +42,64 @@
         </lightning-accordion-section>
 
         <lightning-accordion-section name="advanced" label="Advanced Options">
-            <!-- Bulk Merge -->
-            <div class="slds-box slds-col slds-size_4-of-12 left-panel">
-                <p class="slds-text-title_caps slds-var-m-bottom_x-small">Bulk Merge</p>
-                <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
-                    <div class="slds-col slds-size_1-of-4">
-                        <lightning-combobox
-                            label="Object Type" value={bulkMergeObjectType}
-                            options={bulkMergeObjectTypeOptions}
-                            onchange={handleBulkObjectTypeChange}
-                        ></lightning-combobox>
-                    </div>
-                    <div class="slds-col slds-size_1-of-4">
-                        <lightning-input
-                            type="text" label="Status" value="Open" disabled
-                        ></lightning-input>
-                    </div>
-                    <div class="slds-col slds-size_1-of-4">
-                        <lightning-input
-                            type="number" min="0" max="100"
-                            label="Min Score" value={bulkMergeScore}
-                            onchange={handleBulkScoreChange}
-                        ></lightning-input>
-                    </div>
-                    <div class="slds-col slds-size_1-of-4">
-                        <lightning-button
-                            class="slds-var-m-top_x-small" label="Merge"
-                            variant="brand" disabled={isBulkMerging}
-                            onclick={handleBulkMerge}
-                        ></lightning-button>
+            <div class="slds-grid slds-gutters_small slds-wrap">
+
+                <!-- Bulk Merge -->
+                <div class="slds-col slds-size_1-of-3">
+                    <div class="slds-box">
+                        <p class="slds-text-title_caps slds-var-m-bottom_x-small">Bulk Merge</p>
+                        <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-combobox
+                                    label="Object Type" value={bulkMergeObjectType}
+                                    options={bulkMergeObjectTypeOptions}
+                                    onchange={handleBulkObjectTypeChange}
+                                ></lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-input
+                                    type="number" min="0" max="100"
+                                    label="Min Score" value={bulkMergeScore}
+                                    onchange={handleBulkScoreChange}
+                                ></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-button
+                                    class="slds-var-m-top_x-small" label="Merge"
+                                    variant="brand" disabled={isBulkMerging}
+                                    onclick={handleBulkMerge}
+                                ></lightning-button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Archive -->
+                <div class="slds-col slds-size_1-of-3">
+                    <div class="slds-box">
+                        <p class="slds-text-title_caps slds-var-m-bottom_x-small">Archive</p>
+                        <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
+                            <div class="slds-col">
+                                <p class="slds-var-m-bottom_x-small">Do you want to archive the (non-open) clusters that were detected?</p>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
+                            <div class="slds-col slds-size_2-of-3">
+                                <lightning-combobox
+                                    label="" value={archiveDate} options={archiveDateOptions} variant="label-hidden"
+                                    onchange={handleArchiveDateChange} placeholder="Date to archive"
+                                ></lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-button
+                                    label="Archiving" variant="brand"
+                                    disabled={isArchiving} onclick={handleArchive}
+                                ></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </lightning-accordion-section>
 

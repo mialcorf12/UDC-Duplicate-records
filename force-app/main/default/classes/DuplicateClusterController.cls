@@ -97,4 +97,44 @@ public with sharing class DuplicateClusterController {
         }
         update members;
     }
+
+    /**
+     * @description Returns distinct detected dates (as YYYY-MM-DD strings) for clusters
+     *              that are not Open. Used to populate the Archive date combobox in the UI.
+     *
+     * @return List of Maps with 'label' and 'value' keys formatted as 'YYYY-MM-DD'.
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<Map<String, String>> getArchivableDates() {
+        List<Map<String, String>> options = new List<Map<String, String>>();
+        for (AggregateResult ar : DuplicateClusterSelector.getDistinctNonOpenDates()) {
+            String d = String.valueOf(ar.get('detectedDate')).left(10);
+            options.add(new Map<String, String>{ 'label' => d, 'value' => d });
+        }
+        return options;
+    }
+
+    /**
+     * @description Sets Status__c = 'Archived' on all clusters that are not Open,
+     *              not already Archived, and were detected on the given date.
+     *
+     * @param dateValue  Date string in 'YYYY-MM-DD' format.
+     * @return Number of clusters updated.
+     */
+    @AuraEnabled
+    public static Integer archiveClustersByDate(String dateValue) {
+        if (String.isBlank(dateValue)) {
+            throw new AuraHandledException('dateValue is required');
+        }
+        Date detectedDate = Date.valueOf(dateValue);
+        List<DuplicateCluster__c> toArchive =
+            DuplicateClusterSelector.getArchivableClusters(detectedDate);
+        for (DuplicateCluster__c c : toArchive) {
+            c.Status__c = 'Archived';
+        }
+        if (!toArchive.isEmpty()) {
+            update toArchive;
+        }
+        return toArchive.size();
+    }
 }

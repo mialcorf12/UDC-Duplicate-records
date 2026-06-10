@@ -155,4 +155,37 @@ public with sharing class DuplicateClusterSelector {
         // Sharing enforced by "with sharing" class declaration
         return Database.countQuery(countQuery); //NOSONAR
     }
+
+    /**
+     * @description Returns distinct DetectedDate__c dates (day only) for clusters
+     *              that are not Open. Used to populate the Archive date combobox.
+     * @return List of AggregateResult with key 'detectedDate' (Date).
+     */
+    public static List<AggregateResult> getDistinctNonOpenDates() {
+        return [
+            SELECT DAY_ONLY(DetectedDate__c) detectedDate
+            FROM DuplicateCluster__c
+            WHERE Status__c != 'Open'
+            WITH SECURITY_ENFORCED
+            GROUP BY DAY_ONLY(DetectedDate__c)
+            ORDER BY DAY_ONLY(DetectedDate__c) DESC
+        ];
+    }
+
+    /**
+     * @description Returns clusters eligible to be archived: not Open, not already
+     *              Archived, and detected on the given date.
+     * @param detectedDate The date to filter on (DAY_ONLY of DetectedDate__c).
+     * @return List of DuplicateCluster__c with Id only.
+     */
+    public static List<DuplicateCluster__c> getArchivableClusters(Date detectedDate) {
+        return [
+            SELECT Id
+            FROM DuplicateCluster__c
+            WHERE Status__c != 'Open'
+              AND Status__c != 'Archived'
+              AND DAY_ONLY(DetectedDate__c) = :detectedDate
+            WITH SECURITY_ENFORCED
+        ];
+    }
 }
