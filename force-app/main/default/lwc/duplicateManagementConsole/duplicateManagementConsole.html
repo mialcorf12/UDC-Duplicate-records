@@ -44,26 +44,57 @@
         <lightning-accordion-section name="advanced" label="Advanced Options">
             <div class="slds-grid slds-gutters_small slds-wrap">
 
+                <!-- Detect Duplicates -->
+                <div class="slds-col slds-size_1-of-3">
+                    <div class="slds-box" style="height: 135px;">
+                        <p class="slds-text-title_caps slds-var-m-bottom_x-small">Detect Duplicates</p>
+                        <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
+                            <div class="slds-col">
+                                <p class="slds-var-m-bottom_x-small"></p>
+                            </div>
+                        </div>
+                        <div class="slds-var-p-around_small">
+                            <lightning-button
+                                label="Run Detection"
+                                variant="brand"
+                                disabled={isDetecting}
+                                onclick={handleRunDetection}
+                            ></lightning-button>
+                            <template if:true={detectionJobId}>
+                                <p class="slds-var-m-top_x-small slds-text-body_small slds-text-color_weak">
+                                    Job ID: {detectionJobId}
+                                </p>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Bulk Merge -->
                 <div class="slds-col slds-size_1-of-3">
-                    <div class="slds-box">
+                    <div class="slds-box" style="height: 135px;">
                         <p class="slds-text-title_caps slds-var-m-bottom_x-small">Bulk Merge</p>
                         <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
-                            <div class="slds-col slds-size_1-of-3">
+                            <div class="slds-col slds-size_1-of-4">
                                 <lightning-combobox
                                     label="Object Type" value={bulkMergeObjectType}
                                     options={bulkMergeObjectTypeOptions}
                                     onchange={handleBulkObjectTypeChange}
                                 ></lightning-combobox>
                             </div>
-                            <div class="slds-col slds-size_1-of-3">
+                            <div class="slds-col slds-size_1-of-4">
+                                <lightning-input
+                                    label="Status"
+                                    value="Open" disabled
+                                ></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-4">
                                 <lightning-input
                                     type="number" min="0" max="100"
                                     label="Min Score" value={bulkMergeScore}
                                     onchange={handleBulkScoreChange}
                                 ></lightning-input>
                             </div>
-                            <div class="slds-col slds-size_1-of-3">
+                            <div class="slds-col slds-size_1-of-4">
                                 <lightning-button
                                     class="slds-var-m-top_x-small" label="Merge"
                                     variant="brand" disabled={isBulkMerging}
@@ -76,7 +107,7 @@
 
                 <!-- Archive -->
                 <div class="slds-col slds-size_1-of-3">
-                    <div class="slds-box">
+                    <div class="slds-box" style="height: 135px;">
                         <p class="slds-text-title_caps slds-var-m-bottom_x-small">Archive</p>
                         <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small">
                             <div class="slds-col">

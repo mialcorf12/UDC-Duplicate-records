@@ -20,7 +20,8 @@ export default class DuplicateFilterBar extends LightningElement {
             { label: 'Open', value: 'Open' },
             { label: 'Stale', value: 'Stale' },
             { label: 'Ignored', value: 'Ignored' },
-            { label: 'Merged', value: 'Merged' }
+            { label: 'Merged', value: 'Merged' },
+            { label: 'Archived', value: 'Archived' }
         ];
     }
 

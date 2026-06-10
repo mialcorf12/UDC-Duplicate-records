@@ -105,21 +105,22 @@ export default class DuplicateClusterDetail extends LightningElement {
 
     get isMergeAllowed() {
         const status = this.cluster?.Status__c;
-        return status !== 'Merged' && status !== 'Ignored';
+        return status !== 'Merged' && status !== 'Archived' && status !== 'Ignored';
     }
 
     get isMerged() {
-        return this.cluster?.Status__c === 'Merged';
+        const status = this.cluster?.Status__c;
+        return status === 'Merged' || status === 'Archived';
     }
 
     get isMasterDisabled() {
         const status = this.cluster?.Status__c;
-        return status === 'Merged' || status === 'Ignored' || status === 'Stale';
+        return status === 'Merged' || status === 'Archived' || status === 'Ignored' || status === 'Stale';
     }
 
     get isReadOnly() {
         const status = this.cluster?.Status__c;
-        return status === 'Ignored' || status === 'Stale';
+        return status === 'Ignored' || status === 'Archived' || status === 'Stale';
     }
 
     get formattedDate() {

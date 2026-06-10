@@ -1,5 +1,6 @@
 import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import launchDetection from '@salesforce/apex/BatchLaunchController.launchDetection';
 import launchBulkMerge from '@salesforce/apex/DuplicateMergeController.launchBulkMerge';
 import getArchivableDates from '@salesforce/apex/DuplicateClusterController.getArchivableDates';
 import archiveClustersByDate from '@salesforce/apex/DuplicateClusterController.archiveClustersByDate';
@@ -14,6 +15,9 @@ export default class DuplicateManagementConsole extends LightningElement {
     @track bulkMergeScore = 100;
     @track bulkMergeObjectType = '';
     @track isBulkMerging = false;
+
+    @track isDetecting = false;
+    @track detectionJobId = null;
 
     @track archiveDate = null;
     @track archiveDateOptions = [];
@@ -50,6 +54,27 @@ export default class DuplicateManagementConsole extends LightningElement {
     handleClusterMerged() {
         // Reset selection — the list will re-run its wire on the next interaction
         this.selectedClusterId = null;
+    }
+
+    handleRunDetection() {
+        this.isDetecting = true;
+        launchDetection()
+            .then(jobId => {
+                this.detectionJobId = jobId;
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Detection Started',
+                    message: `Batch job enqueued: ${jobId}`,
+                    variant: 'success'
+                }));
+            })
+            .catch(error => {
+                this.isDetecting = false;
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Error',
+                    message: error.body ? error.body.message : 'An unexpected error occurred.',
+                    variant: 'error'
+                }));
+            });
     }
 
     handleBulkScoreChange(event) {
