@@ -58,7 +58,7 @@ private class DuplicateClusterSelectorTest {
 
         System.assertNotEquals(null, result, 'Expected cluster to be returned');
         System.assertEquals(cluster.Id, result.Id, 'Cluster ID should match');
-        System.assertEquals(2, result.DuplicateClusterMembers__r.size(), 'Expected 2 members');
+        System.assertEquals(2, result.ClusterMembers__r.size(), 'Expected 2 members');
     }
 
     @isTest

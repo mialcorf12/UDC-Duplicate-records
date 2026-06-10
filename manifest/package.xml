@@ -2,21 +2,37 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
 	<types>
 		<members>BatchLaunchController</members>
-		<members>BulkMergeBatch</members>	
+		<members>BatchLaunchControllerTest</members>
+		<members>BulkMergeBatch</members>
+		<members>BulkMergeBatchTest</members>
 		<members>ContactDuplicateTriggerHandler</members>
+		<members>ContactDuplicateTriggerHandlerTest</members>
 		<members>ContactSelector</members>
+		<members>ContactSelectorTest</members>
 		<members>CrossObjectMergeQueueable</members>
+		<members>CrossObjectMergeQueueableTest</members>
 		<members>DuplicateClusterController</members>
+		<members>DuplicateClusterControllerTest</members>
 		<members>DuplicateClusterSelector</members>
+		<members>DuplicateClusterSelectorTest</members>
 		<members>DuplicateDetectionBatch</members>
+		<members>DuplicateDetectionBatchTest</members>
 		<members>DuplicateIgnoreSelector</members>
+		<members>DuplicateIgnoreSelectorTest</members>
 		<members>DuplicateIgnoreService</members>
+		<members>DuplicateIgnoreServiceTest</members>
 		<members>DuplicateMergeController</members>
+		<members>DuplicateMergeControllerTest</members>
 		<members>DuplicateMergeService</members>
+		<members>DuplicateMergeServiceTest</members>
 		<members>DuplicateScoringUtil</members>
+		<members>DuplicateScoringUtilTest</members>
 		<members>LeadDuplicateTriggerHandler</members>
+		<members>LeadDuplicateTriggerHandlerTest</members>
 		<members>LeadSelector</members>
+		<members>LeadSelectorTest</members>
 		<members>MergeStatusController</members>
+		<members>MergeStatusControllerTest</members>
 		<name>ApexClass</name>
 	</types>
 	<types>
@@ -27,6 +43,49 @@
 	<types>
 		<members>DuplicateManagementConsole</members>
 		<name>CustomApplication</name>
+	</types>
+	<types>
+		<members>Contact.Email_Block__c</members>
+		<members>Contact.Name_Block__c</members>
+		<members>Contact.Phone_Block__c</members>
+		<members>DuplicateClusterMember__c.Cluster__c</members>
+		<members>DuplicateClusterMember__c.FieldSnapshotJSON__c</members>
+		<members>DuplicateClusterMember__c.IsMaster__c</members>
+		<members>DuplicateClusterMember__c.ObjectType__c</members>
+		<members>DuplicateClusterMember__c.RecordId__c</members>
+		<members>DuplicateCluster__c.BatchJobId__c</members>
+		<members>DuplicateCluster__c.BlockingKey__c</members>
+		<members>DuplicateCluster__c.ClusterScore__c</members>
+		<members>DuplicateCluster__c.DetectedDate__c</members>
+		<members>DuplicateCluster__c.ObjectType__c</members>
+		<members>DuplicateCluster__c.RecordCount__c</members>
+		<members>DuplicateCluster__c.Status__c</members>
+		<members>DuplicateIgnore__c.IgnoredBy__c</members>
+		<members>DuplicateIgnore__c.IgnoredDate__c</members>
+		<members>DuplicateIgnore__c.PairKey__c</members>
+		<members>DuplicateIgnore__c.Reason__c</members>
+		<members>DuplicateMergeAudit__c.ClusterId__c</members>
+		<members>DuplicateMergeAudit__c.ErrorMessage__c</members>
+		<members>DuplicateMergeAudit__c.FieldOverridesJSON__c</members>
+		<members>DuplicateMergeAudit__c.JobId__c</members>
+		<members>DuplicateMergeAudit__c.MasterRecordId__c</members>
+		<members>DuplicateMergeAudit__c.MergeType__c</members>
+		<members>DuplicateMergeAudit__c.MergedBy__c</members>
+		<members>DuplicateMergeAudit__c.MergedDate__c</members>
+		<members>DuplicateMergeAudit__c.MergedRecordIds__c</members>
+		<members>DuplicateMergeAudit__c.Status__c</members>
+		<members>DuplicateSettings__mdt.BatchCronExpression__c</members>
+		<members>DuplicateSettings__mdt.BatchScope__c</members>
+		<members>DuplicateSettings__mdt.EnabledObjects__c</members>
+		<members>DuplicateSettings__mdt.ScoreThreshold__c</members>
+		<members>Lead.Email_Block__c</members>
+		<members>Lead.Name_Block__c</members>
+		<members>Lead.Phone_Block__c</members>
+		<name>CustomField</name>
+	</types>
+	<types>
+		<members>DuplicateSettings__mdt.Default</members>
+		<name>CustomMetadata</name>
 	</types>
 	<types>
 		<members>Contact</members>

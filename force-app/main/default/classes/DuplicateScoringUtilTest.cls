@@ -221,10 +221,10 @@ private class DuplicateScoringUtilTest {
         Contact retrieved = [SELECT Id, FirstName, LastName, Email, Phone, AccountId, Account.Name FROM Contact WHERE Id = :c.Id];
 
         Test.startTest();
-        String json = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Contact');
+        String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Contact');
         Test.stopTest();
 
-        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
         System.assertEquals(6, parsed.size(), 'Contact snapshot should contain exactly 6 fields');
         System.assert(parsed.containsKey('Email'),     'Must contain Email');
         System.assert(parsed.containsKey('Phone'),     'Must contain Phone');
@@ -246,10 +246,10 @@ private class DuplicateScoringUtilTest {
         Contact retrieved = [SELECT Id, FirstName, LastName, Email, Phone, AccountId, Account.Name FROM Contact WHERE Id = :c.Id];
 
         Test.startTest();
-        String json = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Contact');
+        String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Contact');
         Test.stopTest();
 
-        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
         System.assertEquals(String.valueOf(a.Id), parsed.get('AccountId'), 'AccountId should match the linked account');
         System.assertEquals('Test Corp', parsed.get('Company'), 'Company should reflect Account.Name');
     }
@@ -267,10 +267,10 @@ private class DuplicateScoringUtilTest {
         Lead retrieved = [SELECT Id, FirstName, LastName, Email, Phone, Company FROM Lead WHERE Id = :l.Id];
 
         Test.startTest();
-        String json = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Lead');
+        String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Lead');
         Test.stopTest();
 
-        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
         System.assertEquals(6, parsed.size(), 'Lead snapshot should contain exactly 6 fields');
         System.assertEquals('Acme Corp', parsed.get('Company'), 'Company value should match');
         System.assertEquals('jane@company.com', parsed.get('Email'), 'Email value should match');
@@ -284,10 +284,10 @@ private class DuplicateScoringUtilTest {
         Lead retrieved = [SELECT Id, FirstName, LastName, Email, Phone, Company FROM Lead WHERE Id = :l.Id];
 
         Test.startTest();
-        String json = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Lead');
+        String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Lead');
         Test.stopTest();
 
-        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(json);
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
         Set<String> expectedKeys = new Set<String>{ 'Email', 'Phone', 'FirstName', 'LastName', 'Company', 'AccountId' };
         System.assertEquals(expectedKeys, parsed.keySet(), 'Snapshot must contain only the 6 expected fields');
     }

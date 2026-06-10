@@ -56,14 +56,14 @@ private class DuplicateIgnoreSelectorTest {
 
     @isTest
     static void testGetByPairKeys_bulk200() {
-        List<DuplicateIgnore__c> bulk = new List<DuplicateIgnore__c>();
+        List<DuplicateIgnore__c> bulkIgnores = new List<DuplicateIgnore__c>();
         Set<String> bulkKeys = new Set<String>();
         for (Integer i = 0; i < 200; i++) {
             String k = 'bulkkey_' + i;
-            bulk.add(new DuplicateIgnore__c(PairKey__c = k));
+            bulkIgnores.add(new DuplicateIgnore__c(PairKey__c = k));
             bulkKeys.add(k);
         }
-        insert bulk;
+        insert bulkIgnores;
 
         Test.startTest();
         Map<String, DuplicateIgnore__c> result = DuplicateIgnoreSelector.getByPairKeys(bulkKeys);

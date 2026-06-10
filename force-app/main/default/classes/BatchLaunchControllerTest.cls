@@ -18,7 +18,7 @@ private class BatchLaunchControllerTest {
 
         Test.stopTest();
 
-        System.assertNotNull(jobId,
+        System.assertNotEquals(null, jobId,
             'launchDetection should return a non-null String');
         System.assert(String.isNotBlank(jobId),
             'Returned jobId should not be blank');
