@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Email_Block__c</fullName>
+    <fullName>Company_Block__c</fullName>
     <externalId>false</externalId>
-    <formula>IF(ISBLANK(Email), &quot;&quot;, LOWER(TRIM(Email)))</formula>
+    <formula>IF(ISBLANK(Company), &quot;&quot;, LOWER(LEFT(TRIM(Company), 5)))</formula>
     <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
-    <label>Email Block</label>
+    <label>Company Block</label>
     <required>false</required>
     <trackTrending>false</trackTrending>
     <type>Text</type>

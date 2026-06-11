@@ -6,7 +6,7 @@
   RIGHT(
     SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(
       Phone,&quot; &quot;,&quot;&quot;),&quot;-&quot;,&quot;&quot;),&quot;(&quot;,&quot;&quot;),&quot;)&quot;,&quot;&quot;),&quot;+&quot;,&quot;&quot;),
-  7)
+  10)
 )</formula>
     <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
     <label>Phone Block</label>

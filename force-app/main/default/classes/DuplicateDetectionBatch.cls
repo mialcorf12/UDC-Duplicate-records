@@ -160,16 +160,17 @@ public without sharing class DuplicateDetectionBatch implements Database.Batchab
 
         for (String blockKey : pairsByBlock.keySet()) {
             List<PairData> pairs = pairsByBlock.get(blockKey);
-            Decimal maxScore = 0;
             String objectType = determineObjectType(pairs);
+            Decimal totalScore = 0;
             for (PairData pd : pairs) {
-                if (pd.score > maxScore) { maxScore = pd.score; }
+                totalScore += pd.score;
             }
+            Decimal avgScore = (totalScore / pairs.size()).setScale(2);
 
             DuplicateCluster__c cluster = new DuplicateCluster__c(
                 ObjectType__c   = objectType,
                 Status__c       = 'Open',
-                ClusterScore__c = maxScore,
+                ClusterScore__c = avgScore,
                 BlockingKey__c  = blockKey,
                 DetectedDate__c = DateTime.now(),
                 BatchJobId__c   = bc.getJobId() != null ? String.valueOf(bc.getJobId()).left(18) : null

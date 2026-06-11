@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Name_Block__c</fullName>
     <externalId>false</externalId>
-    <formula>LOWER(LEFT(LastName, 3)) &amp; LOWER(LEFT(FirstName, 1))</formula>
+    <formula>LOWER(LEFT(LastName, 4)) &amp; LOWER(LEFT(FirstName, 2))</formula>
     <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
     <label>Name Block</label>
     <required>false</required>
