@@ -48,6 +48,7 @@
 		<members>Contact.Email_Block__c</members>
 		<members>Contact.Name_Block__c</members>
 		<members>Contact.Phone_Block__c</members>
+		<members>Contact.Company_Block__c</members>
 		<members>DuplicateClusterMember__c.Cluster__c</members>
 		<members>DuplicateClusterMember__c.FieldSnapshotJSON__c</members>
 		<members>DuplicateClusterMember__c.IsMaster__c</members>
@@ -81,6 +82,7 @@
 		<members>Lead.Email_Block__c</members>
 		<members>Lead.Name_Block__c</members>
 		<members>Lead.Phone_Block__c</members>
+		<members>Lead.Company_Block__c</members>
 		<name>CustomField</name>
 	</types>
 	<types>

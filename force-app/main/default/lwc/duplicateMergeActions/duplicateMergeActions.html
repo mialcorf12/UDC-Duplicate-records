@@ -18,6 +18,38 @@
             ></lightning-button>
         </div>
 
+        <div class="slds-col slds-no-flex slds-col_bump-left slds-grid slds-grid_vertical-align-center" style="position:relative">
+            <button class="slds-button" aria-label="Cluster rules info"
+                onmouseenter={showTooltip} onmouseleave={hideTooltip}
+                onfocus={showTooltip} onblur={hideTooltip}>Cluster rules info</button>
+            <template if:true={isTooltipVisible}>
+                <div class="slds-popover slds-popover_tooltip slds-nubbin_right" role="tooltip"
+                     style="position:absolute;right:calc(100% + 0.5rem);top:50%;transform:translateY(-50%);width:22rem;z-index:9001">
+                    <div class="slds-popover__body slds-text-body_small">
+                        <p class="slds-var-m-bottom_x-small"><strong>Cluster rules:</strong></p>
+                        <ul class="slds-list_dotted slds-var-m-bottom_x-small">
+                            <li>Email: Full email address.</li>
+                            <li>Phone: Last 10 digits (including area code, no special characters).</li>
+                            <li>Name: Phonetic — first 4 chars of LastName + first 2 of FirstName.</li>
+                            <li>Company: First 5 characters of company name.</li>
+                        </ul>
+                        <p class="slds-var-m-bottom_x-small"><strong>Reduces performance:</strong></p>
+                        <ul class="slds-list_dotted">
+                            <li>Name: increase to first 5 chars of LastName and FirstName.</li>
+                            <li>Company: increase to first 10 characters.</li>
+                        </ul>
+                        <p class="slds-var-m-bottom_x-small"><strong>Score weights:</strong></p>
+                        <ul class="slds-list_dotted">
+                            <li>Email: 40%</li>
+                            <li>Phone: 30%</li>
+                            <li>Name: 20%</li>
+                            <li>Company: 10%</li>
+                        </ul>
+                    </div>
+                </div>
+            </template>
+        </div>
+
         <!-- Merge progress -->
         <template if:true={currentStep}>
             <div class="slds-col slds-size_1-of-1 slds-var-m-top_x-small">

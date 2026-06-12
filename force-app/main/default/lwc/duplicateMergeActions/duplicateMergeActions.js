@@ -14,10 +14,14 @@ export default class DuplicateMergeActions extends LightningElement {
     @track isLoading = false;
     @track currentStep = null;
     @track errorMessage = null;
+    @track isTooltipVisible = false;
 
     _jobId = null;
     _pollTimer = null;
     _pollCount = 0;
+
+    showTooltip() { this.isTooltipVisible = true; }
+    hideTooltip() { this.isTooltipVisible = false; }
 
     get isMergeDisabled() {
         return !this.masterId || this.isLoading;
