@@ -26,6 +26,7 @@ public with sharing class LeadSelector {
                    FirstName,
                    LastName,
                    Company,
+                   IsConverted,
                    Email_Block__c,
                    Phone_Block__c,
                    Name_Block__c

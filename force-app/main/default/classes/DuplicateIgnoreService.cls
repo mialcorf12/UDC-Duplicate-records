@@ -16,17 +16,34 @@ public with sharing class DuplicateIgnoreService {
      * @param reason Free-text reason for ignoring the pair.
      */
     public static void ignorePair(Id id1, Id id2, Id userId, String reason) {
-        String pairKey = buildPairKey(id1, id2);
+        ignorePairs(new List<IgnorePairRequest>{ new IgnorePairRequest(id1, id2, userId, reason) });
+    }
 
-        DuplicateIgnore__c ignoreRecord = new DuplicateIgnore__c(
-            PairKey__c     = pairKey,
-            IgnoredBy__c   = userId,
-            IgnoredDate__c = DateTime.now(),
-            Reason__c      = reason
-        );
+    public static void ignorePairs(List<IgnorePairRequest> requests) {
+        if (requests == null || requests.isEmpty()) return;
+        List<DuplicateIgnore__c> records = new List<DuplicateIgnore__c>();
+        for (IgnorePairRequest req : requests) {
+            records.add(new DuplicateIgnore__c(
+                PairKey__c     = buildPairKey(req.id1, req.id2),
+                IgnoredBy__c   = req.userId,
+                IgnoredDate__c = DateTime.now(),
+                Reason__c      = req.reason
+            ));
+        }
+        Database.upsert(records, DuplicateIgnore__c.PairKey__c, false);
+    }
 
-        // Upsert by PairKey__c (ExternalId) — idempotent
-        Database.upsert(ignoreRecord, DuplicateIgnore__c.PairKey__c, false);
+    public class IgnorePairRequest {
+        public Id     id1;
+        public Id     id2;
+        public Id     userId;
+        public String reason;
+        public IgnorePairRequest(Id id1, Id id2, Id userId, String reason) {
+            this.id1    = id1;
+            this.id2    = id2;
+            this.userId = userId;
+            this.reason = reason;
+        }
     }
 
     /**

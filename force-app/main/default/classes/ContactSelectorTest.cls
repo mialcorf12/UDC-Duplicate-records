@@ -29,9 +29,7 @@ private class ContactSelectorTest {
 
     @isTest
     static void testGetByEmailBlock_returnsMatchingContacts() {
-        // Email_Block__c is a formula: local part of email
-        // For 'testcontact0@example.com', block = 'testcontact0'
-        Set<String> blockKeys = new Set<String>{ 'testcontact0', 'testcontact1' };
+        Set<String> blockKeys = new Set<String>{ 'testcontact0@example.com', 'testcontact1@example.com' };
 
         Test.startTest();
         List<Contact> result = ContactSelector.getByEmailBlock(blockKeys);
@@ -53,10 +51,9 @@ private class ContactSelectorTest {
 
     @isTest
     static void testGetByEmailBlock_bulk200() {
-        // Build 200 distinct block keys
         Set<String> allBlocks = new Set<String>();
         for (Integer i = 0; i < 200; i++) {
-            allBlocks.add('testcontact' + i);
+            allBlocks.add('testcontact' + i + '@example.com');
         }
 
         Test.startTest();

@@ -152,10 +152,13 @@ private class DuplicateIgnoreServiceTest {
         insert contacts;
         Id userId = getTestUser().Id;
 
-        Test.startTest();
+        List<DuplicateIgnoreService.IgnorePairRequest> requests = new List<DuplicateIgnoreService.IgnorePairRequest>();
         for (Integer i = 0; i < 400; i += 2) {
-            DuplicateIgnoreService.ignorePair(contacts[i].Id, contacts[i + 1].Id, userId, 'Bulk test');
+            requests.add(new DuplicateIgnoreService.IgnorePairRequest(contacts[i].Id, contacts[i + 1].Id, userId, 'Bulk test'));
         }
+
+        Test.startTest();
+        DuplicateIgnoreService.ignorePairs(requests);
         Test.stopTest();
 
         System.assertEquals(200, [SELECT COUNT() FROM DuplicateIgnore__c], 'Should have created 200 ignore records');
