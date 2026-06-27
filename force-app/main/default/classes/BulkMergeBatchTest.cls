@@ -93,7 +93,40 @@ private class BulkMergeBatchTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Scenario 3: No matching clusters — batch completes without errors
+    // Scenario 3: Mixed cluster — initiateCrossObjectMerge is invoked
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void mixedClusterInitiatesCrossObjectMerge() {
+        Lead lead = new Lead(
+            FirstName = 'Mix', LastName = 'Lead',
+            Company   = 'Acme', Email = 'mix.lead@testexample.com', Phone = '5550001'
+        );
+        insert lead;
+
+        Account acc = new Account(Name = 'Acme Mixed');
+        insert acc;
+        Contact contact = new Contact(
+            FirstName = 'Mix', LastName = 'Contact',
+            Email     = 'mix.contact@testexample.com', AccountId = acc.Id
+        );
+        insert contact;
+
+        DuplicateCluster__c cluster = insertCluster('Mixed', 90, 'Open');
+        insertMember(cluster.Id, lead.Id,    'Lead',    false);
+        insertMember(cluster.Id, contact.Id, 'Contact', true);
+
+        Test.startTest();
+        Database.executeBatch(new BulkMergeBatch(70, 'Mixed'), 1);
+        Test.stopTest();
+
+        DuplicateCluster__c updated = [SELECT Status__c FROM DuplicateCluster__c WHERE Id = :cluster.Id];
+        System.assertNotEquals('Open', updated.Status__c,
+            'Mixed cluster should no longer be Open after cross-object merge is initiated');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 4 (was 3): No matching clusters — batch completes without errors
     // ─────────────────────────────────────────────────────────────────────────
 
     @isTest
@@ -107,7 +140,7 @@ private class BulkMergeBatchTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Scenario 4: launchBulkMerge controller method — returns a job ID string
+    // Scenario 5: launchBulkMerge controller method — returns a job ID string
     // ─────────────────────────────────────────────────────────────────────────
 
     @isTest
@@ -121,7 +154,7 @@ private class BulkMergeBatchTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Scenario 5: launchBulkMerge — null minScore throws AuraHandledException
+    // Scenario 6: launchBulkMerge — null minScore throws AuraHandledException
     // ─────────────────────────────────────────────────────────────────────────
 
     @isTest

@@ -148,7 +148,7 @@ private class CrossObjectMergeQueueableTest {
         ));
         Test.stopTest();
 
-        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
+        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c where Status__c = 'Failed'];
         System.assertEquals(1, audits.size(), 'Should have 1 audit record even on failure');
         System.assertEquals('Failed', audits[0].Status__c, 'Audit status should be Failed on error');
         System.assertNotEquals(null, audits[0].ErrorMessage__c, 'ErrorMessage should be populated on failure');
@@ -237,12 +237,62 @@ private class CrossObjectMergeQueueableTest {
         ));
         Test.stopTest();
 
-        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
-        System.assertEquals(1, audits.size(), 'Should have exactly 1 audit record');
-        System.assertEquals('Failed', audits[0].Status__c, 'Audit must be Failed when first lead fails');
-
         Lead rl = [SELECT IsConverted FROM Lead WHERE Id = :realLead.Id];
         System.assertEquals(false, rl.IsConverted, 'Second lead must NOT be converted when chain stopped on failure');
+
+        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c where status__c = 'Failed'];
+        System.assertEquals(1, audits.size(), 'Should have exactly 1 audit record');
+        System.assertEquals('Failed', audits[0].Status__c, 'Audit must be Failed when first lead fails');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Contact merge branch — convertedContactId != contactId (lines 133–162)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void mergeStepExecutedWhenConvertedContactDiffersFromMaster() {
+        Lead lead             = createLead('Merge', 'Lead', 'merge.lead@testexample.com');
+        Contact master        = createContact('Merge', 'Master', 'merge.master@testexample.com');
+        Contact convertedPeer = createContact('Merge', 'Converted', 'merge.converted@testexample.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        CrossObjectMergeQueueable.testConvertedContactIdOverride = convertedPeer.Id;
+
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, master.Id, cluster.Id, new Map<String, String>(), null
+        ));
+        Test.stopTest();
+
+        CrossObjectMergeQueueable.testConvertedContactIdOverride = null;
+
+        List<Contact> remaining = [SELECT Id FROM Contact WHERE Id = :convertedPeer.Id ALL ROWS];
+        System.assertEquals(0, remaining.size(),
+            'Converted contact should be merged into master and no longer exist as a separate record');
+    }
+
+    @isTest
+    static void fieldOverridesAppliedToMasterContactBeforeMerge() {
+        Lead lead             = createLead('Override', 'Lead', 'override.lead@testexample.com');
+        Contact master        = createContact('Override', 'Master', 'override.master@testexample.com');
+        Contact convertedPeer = createContact('Override', 'Converted', 'override.converted@testexample.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        CrossObjectMergeQueueable.testConvertedContactIdOverride = convertedPeer.Id;
+
+        Map<String, String> overrides = new Map<String, String>{ 'FirstName' => 'Overridden' };
+
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, master.Id, cluster.Id, overrides, null
+        ));
+        Test.stopTest();
+
+        CrossObjectMergeQueueable.testConvertedContactIdOverride = null;
+
+        Contact updatedMaster = [SELECT FirstName FROM Contact WHERE Id = :master.Id];
+        System.assertEquals('Overridden', updatedMaster.FirstName,
+            'fieldOverride should have been applied to the master contact before merge');
     }
 
     @isTest

@@ -287,6 +287,111 @@ private class DuplicateClusterControllerTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 10: getArchivableDates — returns label/value maps for non-Open/Archived clusters
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void getArchivableDatesReturnsOptionsForNonOpenClusters() {
+        insertClusters(2, 'Contact', 'Stale', 80);
+
+        Test.startTest();
+        List<Map<String, String>> options = DuplicateClusterController.getArchivableDates();
+        Test.stopTest();
+
+        System.assert(options.size() >= 1, 'Should return at least one date option');
+        Map<String, String> first = options[0];
+        System.assert(first.containsKey('label'), 'Option must have a label key');
+        System.assert(first.containsKey('value'), 'Option must have a value key');
+        System.assertEquals(first.get('label'), first.get('value'),
+            'label and value should be the same date string');
+        System.assertEquals(10, first.get('value').length(),
+            'Date string should be exactly 10 chars (yyyy-MM-dd)');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 11: getArchivableDates — excludes Open and Archived clusters
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void getArchivableDatesExcludesOpenAndArchivedClusters() {
+        insertClusters(2, 'Contact', 'Open',     80);
+        insertClusters(2, 'Contact', 'Archived', 75);
+
+        Test.startTest();
+        List<Map<String, String>> options = DuplicateClusterController.getArchivableDates();
+        Test.stopTest();
+
+        System.assertEquals(0, options.size(),
+            'Open and Archived clusters must not appear in archivable dates');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 12: archiveClustersByDate — archives matching clusters and returns count
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void archiveClustersByDateArchivesMatchingClustersAndReturnsCount() {
+        List<DuplicateCluster__c> archivable = insertClusters(3, 'Contact', 'Stale', 90);
+        List<DuplicateCluster__c> openOnes   = insertClusters(1, 'Contact', 'Open',  85);
+        String dateStr = String.valueOf(Date.today());
+
+        Test.startTest();
+        Integer count = DuplicateClusterController.archiveClustersByDate(dateStr);
+        Test.stopTest();
+
+        System.assertEquals(3, count, 'Should return 3 archived clusters');
+
+        List<DuplicateCluster__c> nowArchived = [
+            SELECT Status__c FROM DuplicateCluster__c
+            WHERE Id IN :archivable
+        ];
+        for (DuplicateCluster__c c : nowArchived) {
+            System.assertEquals('Archived', c.Status__c, 'Stale cluster must be Archived');
+        }
+
+        DuplicateCluster__c stillOpen = [
+            SELECT Status__c FROM DuplicateCluster__c WHERE Id = :openOnes[0].Id
+        ];
+        System.assertEquals('Open', stillOpen.Status__c, 'Open cluster must remain Open');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 13: archiveClustersByDate — throws AuraHandledException on blank dateValue
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void archiveClustersByDateThrowsOnBlankDate() {
+        Boolean exceptionThrown = false;
+
+        Test.startTest();
+        try {
+            DuplicateClusterController.archiveClustersByDate('');
+        } catch (AuraHandledException e) {
+            exceptionThrown = true;
+        }
+        Test.stopTest();
+
+        System.assert(exceptionThrown,
+            'AuraHandledException should be thrown when dateValue is blank');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 14: archiveClustersByDate — returns 0 when no clusters match
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void archiveClustersByDateReturnsZeroWhenNoMatchingClusters() {
+        insertClusters(2, 'Contact', 'Open', 80);
+        String dateStr = String.valueOf(Date.today());
+
+        Test.startTest();
+        Integer count = DuplicateClusterController.archiveClustersByDate(dateStr);
+        Test.stopTest();
+
+        System.assertEquals(0, count, 'Should return 0 when no archivable clusters exist for the date');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Scenario 9: Sharing enforcement via System.runAs()
     // ─────────────────────────────────────────────────────────────────────────
 

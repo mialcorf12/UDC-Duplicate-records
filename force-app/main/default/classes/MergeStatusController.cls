@@ -8,6 +8,9 @@
  */
 public with sharing class MergeStatusController {
 
+    @TestVisible
+    private static String testStatusOverride;
+
     /**
      * @description Returns the current status of an async Apex job (Queueable or Batch).
      *              Maps Salesforce job status values to UI-friendly labels:
@@ -45,7 +48,7 @@ public with sharing class MergeStatusController {
 
         // Map platform status to UI-friendly status
         String uiStatus;
-        String sfStatus = job.Status;
+        String sfStatus = testStatusOverride != null ? testStatusOverride : job.Status;
 
         if (sfStatus == 'Completed') {
             uiStatus = 'Completed';

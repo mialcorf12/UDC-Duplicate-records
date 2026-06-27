@@ -19,6 +19,9 @@
  */
 public with sharing class CrossObjectMergeQueueable implements Queueable {
 
+    @TestVisible
+    private static Id testConvertedContactIdOverride;
+
     private List<Id> leadIds;
     private Id contactId;
     private Id clusterId;
@@ -50,138 +53,127 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
     }
 
     /**
-     * @description Processes one lead per execution, self-chains for the remainder.
+     * @description Processes all leads in a single execution (loop, no chaining).
+     *              A per-lead savepoint rolls back only that lead's partial DML on failure.
+     *              The audit record is inserted before any savepoint so catch-block updates
+     *              always have a clean DML context.
      */
     public void execute(QueueableContext ctx) {
         if (leadIds.isEmpty()) return;
 
-        Id currentLeadId        = leadIds.remove(0);
-        List<Id> remainingLeads = new List<Id>(leadIds);
+        // ── Step 1: Insert audit once — before any savepoint ──
+        DuplicateMergeAudit__c audit = new DuplicateMergeAudit__c(
+            ClusterId__c          = clusterId,
+            MasterRecordId__c     = String.valueOf(contactId),
+            MergedRecordIds__c    = '',
+            Status__c             = 'Pending',
+            MergeType__c          = 'CrossObject',
+            MergedDate__c         = DateTime.now(),
+            JobId__c              = ctx != null ? String.valueOf(ctx.getJobId()) : null,
+            FieldOverridesJSON__c = JSON.serialize(fieldOverrides)
+        );
+        insert audit;
+        Id capturedAuditId = audit.Id;
 
-        // ── Step 1: Insert (first call) or load (chained call) audit record ──
-        DuplicateMergeAudit__c audit;
-        if (auditId == null) {
-            audit = new DuplicateMergeAudit__c(
-                ClusterId__c          = clusterId,
-                MasterRecordId__c     = String.valueOf(contactId),
-                MergedRecordIds__c    = '',
-                Status__c             = 'Pending',
-                MergeType__c          = 'CrossObject',
-                MergedDate__c         = DateTime.now(),
-                JobId__c              = ctx != null ? String.valueOf(ctx.getJobId()) : null,
-                FieldOverridesJSON__c = JSON.serialize(fieldOverrides)
-            );
-            insert audit;
-            auditId = audit.Id;
-        } else {
-            audit = [
-                SELECT Id, MergedRecordIds__c
-                FROM   DuplicateMergeAudit__c
-                WHERE  Id = :auditId
-                LIMIT  1
-            ];
+        // ── Steps 2–6: Process each lead; stop chain on first failure ──
+        String accumulated = '';
+        for (Id leadId : new List<Id>(leadIds)) {
+            Savepoint sp = Database.setSavepoint();
+            try {
+                convertAndMergeLead(leadId);
+                accumulated = String.isBlank(accumulated)
+                    ? String.valueOf(leadId)
+                    : accumulated + ',' + String.valueOf(leadId);
+            } catch (Exception ex) {
+                Database.rollback(sp);
+                update new DuplicateMergeAudit__c(
+                    Id              = capturedAuditId,
+                    Status__c       = 'Failed',
+                    ErrorMessage__c = ex.getMessage()?.abbreviate(255)
+                );
+                return;
+            }
         }
 
-        Savepoint sp = Database.setSavepoint();
-        try {
-            // ── Step 2: Convert Lead into the existing Contact ──
-            Contact masterForConvert = [SELECT AccountId FROM Contact WHERE Id = :contactId LIMIT 1];
+        // ── Step 7: All leads succeeded — finalize ──
+        audit.MergedRecordIds__c = accumulated;
+        if (clusterId != null) {
+            update new DuplicateCluster__c(Id = clusterId, Status__c = 'Merged');
+        }
+        audit.Status__c = 'Success';
+        update audit;
+    }
 
-            Database.LeadConvert lc = new Database.LeadConvert();
-            lc.setLeadId(currentLeadId);
-            lc.setContactId(contactId);
-            if (masterForConvert.AccountId != null) {
-                lc.setAccountId(masterForConvert.AccountId);
+    private void convertAndMergeLead(Id leadId) {
+        // ── Step 2: Convert Lead into the existing Contact ──
+        Contact masterForConvert = [SELECT AccountId FROM Contact WHERE Id = :contactId LIMIT 1];
+
+        Database.LeadConvert lc = new Database.LeadConvert();
+        lc.setLeadId(leadId);
+        lc.setContactId(contactId);
+        if (masterForConvert.AccountId != null) {
+            lc.setAccountId(masterForConvert.AccountId);
+        }
+        lc.setDoNotCreateOpportunity(true);
+        LeadStatus convertedLeadStatus = [
+            SELECT MasterLabel FROM LeadStatus WHERE IsConverted = true LIMIT 1
+        ];
+        lc.setConvertedStatus(convertedLeadStatus.MasterLabel);
+
+        Database.LeadConvertResult lcResult = Database.convertLead(lc);
+
+        if (!lcResult.isSuccess()) {
+            List<String> errors = new List<String>();
+            for (Database.Error e : lcResult.getErrors()) {
+                errors.add(e.getMessage());
             }
-            lc.setDoNotCreateOpportunity(true);
-            LeadStatus convertedLeadStatus = [
-                SELECT MasterLabel FROM LeadStatus WHERE IsConverted = true LIMIT 1
+            throw new DuplicateMergeException('Lead conversion failed: ' + String.join(errors, '; '));
+        }
+
+        // ── Step 3: Fetch master Contact + converted Contact ──
+        Id convertedContactId = testConvertedContactIdOverride != null
+            ? testConvertedContactIdOverride
+            : lcResult.getContactId();
+
+        if (convertedContactId != null && convertedContactId != contactId) {
+            List<Contact> contactsToMerge = [
+                SELECT Id, Email, Phone, FirstName, LastName, AccountId
+                FROM   Contact
+                WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }
+                WITH   SECURITY_ENFORCED
             ];
-            lc.setConvertedStatus(convertedLeadStatus.MasterLabel);
 
-            Database.LeadConvertResult lcResult = Database.convertLead(lc);
-
-            if (!lcResult.isSuccess()) {
-                List<String> errors = new List<String>();
-                for (Database.Error e : lcResult.getErrors()) {
-                    errors.add(e.getMessage());
-                }
-                throw new DuplicateMergeException('Lead conversion failed: ' + String.join(errors, '; '));
+            Contact masterContact    = null;
+            Contact convertedContact = null;
+            for (Contact c : contactsToMerge) {
+                if (c.Id == contactId) { masterContact    = c; }
+                else                   { convertedContact = c; }
             }
 
-            // ── Step 3: Fetch master Contact + converted Contact ──
-            Id convertedContactId = lcResult.getContactId();
+            if (masterContact    == null) throw new DuplicateMergeException('Master contact not found: '    + contactId);
+            if (convertedContact == null) throw new DuplicateMergeException('Converted contact not found: ' + convertedContactId);
 
-            if (convertedContactId != null && convertedContactId != contactId) {
-                List<Contact> contactsToMerge = [
-                    SELECT Id, Email, Phone, FirstName, LastName, AccountId
-                    FROM   Contact
-                    WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }
-                    WITH   SECURITY_ENFORCED
-                ];
-
-                Contact masterContact    = null;
-                Contact convertedContact = null;
-                for (Contact c : contactsToMerge) {
-                    if (c.Id == contactId) { masterContact    = c; }
-                    else                   { convertedContact = c; }
+            // ── Step 4: Apply fieldOverrides ──
+            Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+            if (!safeOverrides.isEmpty()) {
+                for (String fieldName : safeOverrides.keySet()) {
+                    masterContact.put(fieldName, safeOverrides.get(fieldName));
                 }
-
-                if (masterContact    == null) throw new DuplicateMergeException('Master contact not found: '    + contactId);
-                if (convertedContact == null) throw new DuplicateMergeException('Converted contact not found: ' + convertedContactId);
-
-                // ── Step 4: Apply fieldOverrides ──
-                Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
-                if (!safeOverrides.isEmpty()) {
-                    for (String fieldName : safeOverrides.keySet()) {
-                        masterContact.put(fieldName, safeOverrides.get(fieldName));
-                    }
-                    update masterContact;
-                }
-
-                // ── Step 5: Merge master with converted Contact ──
-                Database.merge(masterContact, convertedContact);
-
-            } else {
-                Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
-                if (!safeOverrides.isEmpty()) {
-                    Contact masterContact = new Contact(Id = contactId);
-                    for (String fieldName : safeOverrides.keySet()) {
-                        masterContact.put(fieldName, safeOverrides.get(fieldName));
-                    }
-                    update masterContact;
-                }
+                update masterContact;
             }
 
-            // ── Step 6: Accumulate current lead ID in audit ──
-            String existing = String.isBlank(audit.MergedRecordIds__c) ? '' : audit.MergedRecordIds__c;
-            audit.MergedRecordIds__c = String.isBlank(existing)
-                ? String.valueOf(currentLeadId)
-                : existing + ',' + String.valueOf(currentLeadId);
+            // ── Step 5: Merge master with converted Contact ──
+            Database.merge(masterContact, convertedContact);
 
-            if (remainingLeads.isEmpty()) {
-                // ── Step 7b: Last lead — finalize cluster and audit ──
-                if (clusterId != null) {
-                    update new DuplicateCluster__c(Id = clusterId, Status__c = 'Merged');
+        } else {
+            Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+            if (!safeOverrides.isEmpty()) {
+                Contact masterContact = new Contact(Id = contactId);
+                for (String fieldName : safeOverrides.keySet()) {
+                    masterContact.put(fieldName, safeOverrides.get(fieldName));
                 }
-                audit.Status__c = 'Success';
-                update audit;
-
-            } else {
-                // ── Step 7a: More leads — save progress and chain ──
-                update audit;
-                System.enqueueJob(
-                    new CrossObjectMergeQueueable(
-                        remainingLeads, contactId, clusterId, fieldOverrides, audit.Id
-                    )
-                );
+                update masterContact;
             }
-
-        } catch (Exception ex) {
-            Database.rollback(sp);
-            audit.Status__c       = 'Failed';
-            audit.ErrorMessage__c = ex.getMessage();
-            update audit;
         }
     }
 

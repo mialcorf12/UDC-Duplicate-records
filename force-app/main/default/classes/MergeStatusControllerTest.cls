@@ -141,6 +141,98 @@ private class MergeStatusControllerTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 6: sfStatus 'Failed' maps to UI status 'Failed'
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void failedStatusMapsToUiFailed() {
+        Id jobId = enqueueTestBatch();
+        MergeStatusController.testStatusOverride = 'Failed';
+
+        Test.startTest();
+        Map<String, Object> result = MergeStatusController.getJobStatus(String.valueOf(jobId));
+        Test.stopTest();
+
+        MergeStatusController.testStatusOverride = null;
+        System.assertEquals('Failed', (String) result.get('status'),
+            'AsyncApexJob status Failed should map to UI status Failed');
+        System.assertEquals('Failed', (String) result.get('message'),
+            'message should fall back to uiStatus when ExtendedStatus is blank');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 7: sfStatus 'Aborted' also maps to UI status 'Failed'
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void abortedStatusMapsToUiFailed() {
+        Id jobId = enqueueTestBatch();
+        MergeStatusController.testStatusOverride = 'Aborted';
+
+        Test.startTest();
+        Map<String, Object> result = MergeStatusController.getJobStatus(String.valueOf(jobId));
+        Test.stopTest();
+
+        MergeStatusController.testStatusOverride = null;
+        System.assertEquals('Failed', (String) result.get('status'),
+            'AsyncApexJob status Aborted should map to UI status Failed');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 8: sfStatus 'Processing' maps to UI status 'Processing'
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void processingStatusMapsToUiProcessing() {
+        Id jobId = enqueueTestBatch();
+        MergeStatusController.testStatusOverride = 'Processing';
+
+        Test.startTest();
+        Map<String, Object> result = MergeStatusController.getJobStatus(String.valueOf(jobId));
+        Test.stopTest();
+
+        MergeStatusController.testStatusOverride = null;
+        System.assertEquals('Processing', (String) result.get('status'),
+            'AsyncApexJob status Processing should map to UI status Processing');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 9: sfStatus 'InProgress' maps to UI status 'Processing'
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void inProgressStatusMapsToUiProcessing() {
+        Id jobId = enqueueTestBatch();
+        MergeStatusController.testStatusOverride = 'InProgress';
+
+        Test.startTest();
+        Map<String, Object> result = MergeStatusController.getJobStatus(String.valueOf(jobId));
+        Test.stopTest();
+
+        MergeStatusController.testStatusOverride = null;
+        System.assertEquals('Processing', (String) result.get('status'),
+            'AsyncApexJob status InProgress should map to UI status Processing');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 10: sfStatus 'Queued' maps to UI status 'Queued' (else branch)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void queuedStatusMapsToUiQueued() {
+        Id jobId = enqueueTestBatch();
+        MergeStatusController.testStatusOverride = 'Queued';
+
+        Test.startTest();
+        Map<String, Object> result = MergeStatusController.getJobStatus(String.valueOf(jobId));
+        Test.stopTest();
+
+        MergeStatusController.testStatusOverride = null;
+        System.assertEquals('Queued', (String) result.get('status'),
+            'AsyncApexJob status Queued should map to UI status Queued');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Scenario 5: Empty jobId string throws AuraHandledException
     // ─────────────────────────────────────────────────────────────────────────
 
