@@ -85,12 +85,10 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
                     ? String.valueOf(leadId)
                     : accumulated + ',' + String.valueOf(leadId);
             } catch (Exception ex) {
-                Database.rollback(sp);
-                update new DuplicateMergeAudit__c(
-                    Id              = capturedAuditId,
-                    Status__c       = 'Failed',
-                    ErrorMessage__c = ex.getMessage()?.abbreviate(255)
-                );
+                try { Database.rollback(sp); } catch (Exception rbEx) { /* rollback best-effort */ }
+                audit.Status__c       = 'Failed';
+                audit.ErrorMessage__c = ex.getMessage()?.abbreviate(255);
+                update audit;
                 return;
             }
         }

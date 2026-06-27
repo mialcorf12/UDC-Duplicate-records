@@ -154,14 +154,13 @@ public with sharing class DuplicateClusterSelector {
      * @return List of AggregateResult with key 'detectedDate' (Date).
      */
     public static List<AggregateResult> getDistinctNonOpenDates() {
-        List<AggregateResult> results = [
+        return [
             SELECT DAY_ONLY(DetectedDate__c) detectedDate
             FROM DuplicateCluster__c
             WHERE Status__c NOT IN ('Open', 'Archived')
             GROUP BY DAY_ONLY(DetectedDate__c)
             ORDER BY DAY_ONLY(DetectedDate__c) DESC
         ];
-        return (List<AggregateResult>) Security.stripInaccessible(AccessType.READABLE, results).getRecords();
     }
 
     /**
