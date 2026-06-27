@@ -120,7 +120,9 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
         ];
         lc.setConvertedStatus(convertedLeadStatus.MasterLabel);
 
-        Database.LeadConvertResult lcResult = Database.convertLead(lc);
+        Database.LeadConvertResult lcResult = Database.convertLead(
+            new List<Database.LeadConvert>{ lc }, false
+        )[0];
 
         if (!lcResult.isSuccess()) {
             List<String> errors = new List<String>();

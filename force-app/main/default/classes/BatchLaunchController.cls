@@ -4,6 +4,9 @@
  */
 public with sharing class BatchLaunchController {
 
+    @TestVisible
+    private static Boolean throwForTest = false;
+
     /**
      * @description Enqueues the DuplicateDetectionBatch with a chunk size of 200
      *              and returns the resulting AsyncApexJob Id.
@@ -14,6 +17,7 @@ public with sharing class BatchLaunchController {
     @AuraEnabled
     public static String launchDetection() {
         try {
+            if (throwForTest) throw new IllegalArgumentException('forced test exception');
             DuplicateDetectionBatch batch = new DuplicateDetectionBatch();
             Id jobId = Database.executeBatch(batch, 200);
             return String.valueOf(jobId);

@@ -331,8 +331,29 @@ private class DuplicateClusterControllerTest {
 
     @isTest
     static void archiveClustersByDateArchivesMatchingClustersAndReturnsCount() {
-        List<DuplicateCluster__c> archivable = insertClusters(3, 'Contact', 'Stale', 90);
-        List<DuplicateCluster__c> openOnes   = insertClusters(1, 'Contact', 'Open',  85);
+        // Use a timezone-safe midday DateTime so DAY_ONLY() always resolves to Date.today()
+        // regardless of the org's UTC offset. DateTime.now() near midnight UTC can shift the date.
+        DateTime safeNow = DateTime.newInstance(Date.today(), Time.newInstance(12, 0, 0, 0));
+
+        List<DuplicateCluster__c> archivable = new List<DuplicateCluster__c>();
+        for (Integer i = 0; i < 3; i++) {
+            archivable.add(new DuplicateCluster__c(
+                ObjectType__c   = 'Contact',
+                Status__c       = 'Stale',
+                ClusterScore__c = 90 - i,
+                DetectedDate__c = safeNow
+            ));
+        }
+        insert archivable;
+
+        DuplicateCluster__c openOne = new DuplicateCluster__c(
+            ObjectType__c   = 'Contact',
+            Status__c       = 'Open',
+            ClusterScore__c = 85,
+            DetectedDate__c = safeNow
+        );
+        insert openOne;
+
         String dateStr = String.valueOf(Date.today());
 
         Test.startTest();
@@ -350,7 +371,7 @@ private class DuplicateClusterControllerTest {
         }
 
         DuplicateCluster__c stillOpen = [
-            SELECT Status__c FROM DuplicateCluster__c WHERE Id = :openOnes[0].Id
+            SELECT Status__c FROM DuplicateCluster__c WHERE Id = :openOne.Id
         ];
         System.assertEquals('Open', stillOpen.Status__c, 'Open cluster must remain Open');
     }

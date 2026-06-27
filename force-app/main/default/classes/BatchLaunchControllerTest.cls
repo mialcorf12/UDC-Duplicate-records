@@ -68,4 +68,28 @@ private class BatchLaunchControllerTest {
             'Returned jobId should be a valid Salesforce Id (15 or 18 chars), got: ' + jobId.length()
         );
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 4: Exception in launchDetection throws AuraHandledException
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void launchDetectionThrowsAuraHandledException() {
+        BatchLaunchController.throwForTest = true;
+        AuraHandledException caught;
+
+        Test.startTest();
+        try {
+            BatchLaunchController.launchDetection();
+        } catch (AuraHandledException e) {
+            caught = e;
+        }
+        Test.stopTest();
+
+        System.assertNotEquals(null, caught,
+            'launchDetection should throw AuraHandledException when an error occurs');
+        System.assert(String.isNotBlank(caught.getMessage()),
+            'AuraHandledException message should not be blank');
+    }
+
 }
