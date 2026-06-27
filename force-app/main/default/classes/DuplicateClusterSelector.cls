@@ -28,7 +28,6 @@ public with sharing class DuplicateClusterSelector {
                      FROM   ClusterMembers__r)
             FROM   DuplicateCluster__c
             WHERE  Id = :clusterId
-            WITH   SECURITY_ENFORCED
             LIMIT  1
         ];
         return results.isEmpty() ? null : results[0];
@@ -51,12 +50,11 @@ public with sharing class DuplicateClusterSelector {
             recordIdStrings.add(String.valueOf(rid));
         }
 
-        List<DuplicateClusterMember__c> members = [
-            SELECT Cluster__c
-            FROM   DuplicateClusterMember__c
-            WHERE  RecordId__c IN :recordIdStrings
-            WITH   SECURITY_ENFORCED
-        ];
+        List<DuplicateClusterMember__c> members = (List<DuplicateClusterMember__c>)
+            Security.stripInaccessible(
+                AccessType.READABLE,
+                [SELECT Cluster__c FROM DuplicateClusterMember__c WHERE RecordId__c IN :recordIdStrings]
+            ).getRecords();
 
         Set<Id> clusterIds = new Set<Id>();
         for (DuplicateClusterMember__c m : members) {
@@ -67,20 +65,14 @@ public with sharing class DuplicateClusterSelector {
             return new List<DuplicateCluster__c>();
         }
 
-        return [
-            SELECT Id,
-                   Name,
-                   ObjectType__c,
-                   Status__c,
-                   ClusterScore__c,
-                   BlockingKey__c,
-                   DetectedDate__c,
-                   BatchJobId__c,
-                   RecordCount__c
-            FROM   DuplicateCluster__c
-            WHERE  Id IN :clusterIds
-            WITH   SECURITY_ENFORCED
-        ];
+        return (List<DuplicateCluster__c>)
+            Security.stripInaccessible(
+                AccessType.READABLE,
+                [SELECT Id, Name, ObjectType__c, Status__c, ClusterScore__c,
+                        BlockingKey__c, DetectedDate__c, BatchJobId__c, RecordCount__c
+                 FROM   DuplicateCluster__c
+                 WHERE  Id IN :clusterIds]
+            ).getRecords();
     }
 
     /**
@@ -162,14 +154,14 @@ public with sharing class DuplicateClusterSelector {
      * @return List of AggregateResult with key 'detectedDate' (Date).
      */
     public static List<AggregateResult> getDistinctNonOpenDates() {
-        return [
+        List<AggregateResult> results = [
             SELECT DAY_ONLY(DetectedDate__c) detectedDate
             FROM DuplicateCluster__c
             WHERE Status__c NOT IN ('Open', 'Archived')
-            WITH SECURITY_ENFORCED
             GROUP BY DAY_ONLY(DetectedDate__c)
             ORDER BY DAY_ONLY(DetectedDate__c) DESC
         ];
+        return (List<AggregateResult>) Security.stripInaccessible(AccessType.READABLE, results).getRecords();
     }
 
     /**
@@ -179,13 +171,13 @@ public with sharing class DuplicateClusterSelector {
      * @return List of DuplicateCluster__c with Id only.
      */
     public static List<DuplicateCluster__c> getArchivableClusters(Date detectedDate) {
-        return [
+        List<DuplicateCluster__c> results = [
             SELECT Id
             FROM DuplicateCluster__c
             WHERE Status__c != 'Open'
               AND Status__c != 'Archived'
               AND DAY_ONLY(DetectedDate__c) = :detectedDate
-            WITH SECURITY_ENFORCED
         ];
+        return (List<DuplicateCluster__c>) Security.stripInaccessible(AccessType.READABLE, results).getRecords();
     }
 }

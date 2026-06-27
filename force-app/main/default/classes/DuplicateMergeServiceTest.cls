@@ -146,9 +146,9 @@ private class DuplicateMergeServiceTest {
         DuplicateMergeService.mergeSameObject(cluster.Id, contacts[0].Id, null);
         Test.stopTest();
 
-        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, MergeType__c FROM DuplicateMergeAudit__c];
+        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, MergeType__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
         System.assertEquals(1, audits.size(), 'Should have 1 audit record');
-        System.assertEquals('Success', audits[0].Status__c, 'Audit should be Success');
+        System.assertEquals('Success', audits[0].Status__c, 'Audit should be Success. Error: ' + audits[0].ErrorMessage__c);
         System.assertEquals('SameObject', audits[0].MergeType__c, 'Merge type should be SameObject');
     }
 

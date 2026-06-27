@@ -20,10 +20,10 @@ public with sharing class DuplicateIgnoreSelector {
             SELECT Id, PairKey__c
             FROM   DuplicateIgnore__c
             WHERE  PairKey__c = :pairKey
-            WITH   SECURITY_ENFORCED
             LIMIT  1
         ];
-        return records.isEmpty() ? null : records[0];
+        SObject[] stripped = Security.stripInaccessible(AccessType.READABLE, records).getRecords();
+        return stripped.isEmpty() ? null : (DuplicateIgnore__c) stripped[0];
     }
 
     public static Map<String, DuplicateIgnore__c> getByPairKeys(Set<String> pairKeys) {
@@ -41,11 +41,12 @@ public with sharing class DuplicateIgnoreSelector {
                    Reason__c
             FROM   DuplicateIgnore__c
             WHERE  PairKey__c IN :pairKeys
-            WITH   SECURITY_ENFORCED
         ];
 
-        for (DuplicateIgnore__c rec : records) {
-            result.put(rec.PairKey__c, rec);
+        SObject[] stripped = Security.stripInaccessible(AccessType.READABLE, records).getRecords();
+        for (SObject rec : stripped) {
+            DuplicateIgnore__c ignore = (DuplicateIgnore__c) rec;
+            result.put(ignore.PairKey__c, ignore);
         }
 
         return result;

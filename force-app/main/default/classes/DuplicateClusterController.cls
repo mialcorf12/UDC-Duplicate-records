@@ -90,8 +90,8 @@ public with sharing class DuplicateClusterController {
             SELECT Id, RecordId__c, IsMaster__c
             FROM DuplicateClusterMember__c
             WHERE Cluster__c = :clusterId
-            WITH SECURITY_ENFORCED
         ];
+        members = (List<DuplicateClusterMember__c>) Security.stripInaccessible(AccessType.READABLE, members).getRecords();
         for (DuplicateClusterMember__c m : members) {
             m.IsMaster__c = (m.RecordId__c == memberRecordId);
         }

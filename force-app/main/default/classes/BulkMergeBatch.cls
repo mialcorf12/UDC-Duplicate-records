@@ -22,7 +22,7 @@ public with sharing class BulkMergeBatch implements Database.Batchable<SObject> 
         if (String.isNotBlank(objectType)) {
             soql += 'AND ObjectType__c = :objectType ';
         }
-        soql += 'WITH SECURITY_ENFORCED';
+        soql += 'ORDER BY Id';
         return Database.getQueryLocator(soql);
     }
 
