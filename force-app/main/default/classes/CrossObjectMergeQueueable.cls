@@ -138,12 +138,12 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             : lcResult.getContactId();
 
         if (convertedContactId != null && convertedContactId != contactId) {
-            List<Contact> contactsToMerge = [
-                SELECT Id, Email, Phone, FirstName, LastName, AccountId
-                FROM   Contact
-                WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }
-                WITH   SECURITY_ENFORCED
-            ];
+            List<Contact> contactsToMerge = (List<Contact>) Security.stripInaccessible(
+                AccessType.READABLE,
+                [SELECT Id, Email, Phone, FirstName, LastName, AccountId
+                 FROM   Contact
+                 WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }]
+            ).getRecords();
 
             Contact masterContact    = null;
             Contact convertedContact = null;
