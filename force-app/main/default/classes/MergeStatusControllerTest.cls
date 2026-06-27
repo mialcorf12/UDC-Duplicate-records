@@ -75,7 +75,7 @@ private class MergeStatusControllerTest {
         // The safest approach: enqueue and delete is not possible on AsyncApexJob.
         // Instead, pass a syntactically valid but non-existent Id.
         // AsyncApexJob key prefix is '707'.
-        Id fakeJobId = '7070x000000FAKE18'; // intentionally non-existent
+        String fakeJobId = '707000000000001'; // valid 15-char format, non-existent job
 
         Test.startTest();
 

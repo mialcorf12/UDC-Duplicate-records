@@ -26,7 +26,7 @@ private class LeadSelectorTest {
 
     @isTest
     static void testGetByEmailBlock_returnsMatchingLeads() {
-        Set<String> blockKeys = new Set<String>{ 'testlead0', 'testlead1' };
+        Set<String> blockKeys = new Set<String>{ 'testlead0@example.com', 'testlead1@example.com' };
 
         Test.startTest();
         List<Lead> result = LeadSelector.getByEmailBlock(blockKeys);
@@ -71,7 +71,7 @@ private class LeadSelectorTest {
     static void testGetByEmailBlock_bulk200() {
         Set<String> allBlocks = new Set<String>();
         for (Integer i = 0; i < 200; i++) {
-            allBlocks.add('testlead' + i);
+            allBlocks.add('testlead' + i + '@example.com');
         }
 
         Test.startTest();

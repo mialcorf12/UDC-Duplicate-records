@@ -108,7 +108,7 @@ private class DuplicateClusterControllerTest {
         Test.stopTest();
 
         System.assertEquals(5, (Integer) result.get('totalCount'), 'Should count all 5 clusters');
-        System.assertEquals(50, (Integer) result.get('pageSize'),   'Default pageSize is 50');
+        System.assertEquals(10, (Integer) result.get('pageSize'),   'Default pageSize is 10');
         System.assertEquals(1,  (Integer) result.get('pageNumber'), 'Default pageNumber is 1');
     }
 

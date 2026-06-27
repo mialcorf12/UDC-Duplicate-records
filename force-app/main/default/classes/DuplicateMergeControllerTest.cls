@@ -126,7 +126,7 @@ private class DuplicateMergeControllerTest {
         Test.stopTest();
 
         System.assertEquals(true, result.get('success'),
-            'mergeCluster should return success=true for same-object Lead merge');
+            'mergeCluster should return success=true for same-object Lead merge: ' + result.get('message'));
 
         DuplicateCluster__c updated = [
             SELECT Status__c FROM DuplicateCluster__c WHERE Id = :cluster.Id LIMIT 1

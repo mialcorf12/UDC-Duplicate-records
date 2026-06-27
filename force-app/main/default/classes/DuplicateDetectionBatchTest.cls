@@ -96,12 +96,13 @@ private class DuplicateDetectionBatchTest {
             System.assertNotEquals('', m.FieldSnapshotJSON__c, 'FieldSnapshotJSON__c should not be empty');
 
             Map<String, Object> snapshot = (Map<String, Object>) JSON.deserializeUntyped(m.FieldSnapshotJSON__c);
-            System.assertEquals(5, snapshot.size(), 'Snapshot must have exactly 5 fields');
+            System.assertEquals(6, snapshot.size(), 'Snapshot must have exactly 6 fields');
             System.assert(snapshot.containsKey('Email'),     'Snapshot must contain Email');
             System.assert(snapshot.containsKey('Phone'),     'Snapshot must contain Phone');
             System.assert(snapshot.containsKey('FirstName'), 'Snapshot must contain FirstName');
             System.assert(snapshot.containsKey('LastName'),  'Snapshot must contain LastName');
             System.assert(snapshot.containsKey('Company'),   'Snapshot must contain Company');
+            System.assert(snapshot.containsKey('AccountId'),   'Snapshot must contain AccountId');
         }
     }
 
@@ -155,7 +156,10 @@ private class DuplicateDetectionBatchTest {
         insert bulkContacts;
 
         Test.startTest();
-        Database.executeBatch(new DuplicateDetectionBatch(), 200);
+        // Batch size must exceed total records (200 bulk + 10 from @TestSetup = 210)
+        // to avoid Salesforce's "no more than one executeBatch per test method" limit
+        // which fires when a Database.Stateful batch produces multiple chunks in test context.
+        Database.executeBatch(new DuplicateDetectionBatch(), 250);
         Test.stopTest();
 
         // Should not throw governor limit exceptions

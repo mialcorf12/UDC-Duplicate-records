@@ -102,7 +102,13 @@ public with sharing class DuplicateMergeService {
                 }
 
                 // Merge (max 2 secondaries)
-                Database.merge(masterLead, secondaryLeads);
+                // Pass Id-only records to avoid INVALID_FIELD_FOR_INSERT_UPDATE caused by
+                // read-only system fields (IsConverted) loaded on the queried SObjects.
+                List<Id> secondaryLeadIds = new List<Id>();
+                for (Lead l : secondaryLeads) {
+                    secondaryLeadIds.add(l.Id);
+                }
+                Database.merge(new Lead(Id = masterLead.Id), secondaryLeadIds);
 
             } else {
                 // ── Contact-Contact merge ──

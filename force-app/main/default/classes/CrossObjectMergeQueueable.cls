@@ -82,6 +82,7 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             ];
         }
 
+        Savepoint sp = Database.setSavepoint();
         try {
             // ── Step 2: Convert Lead into the existing Contact ──
             Contact masterForConvert = [SELECT AccountId FROM Contact WHERE Id = :contactId LIMIT 1];
@@ -89,7 +90,9 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             Database.LeadConvert lc = new Database.LeadConvert();
             lc.setLeadId(currentLeadId);
             lc.setContactId(contactId);
-            lc.setAccountId(masterForConvert.AccountId);
+            if (masterForConvert.AccountId != null) {
+                lc.setAccountId(masterForConvert.AccountId);
+            }
             lc.setDoNotCreateOpportunity(true);
             LeadStatus convertedLeadStatus = [
                 SELECT MasterLabel FROM LeadStatus WHERE IsConverted = true LIMIT 1
@@ -175,6 +178,7 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             }
 
         } catch (Exception ex) {
+            Database.rollback(sp);
             audit.Status__c       = 'Failed';
             audit.ErrorMessage__c = ex.getMessage();
             update audit;

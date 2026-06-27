@@ -24,11 +24,14 @@ private class CrossObjectMergeQueueableTest {
     }
 
     private static Contact createContact(String firstName, String lastName, String email) {
+        Account acc = new Account(Name = firstName + ' ' + lastName + ' Co');
+        insert acc;
         Contact c = new Contact(
             FirstName = firstName,
             LastName  = lastName,
             Email     = email,
-            Phone     = '5551234567'
+            Phone     = '5551234567',
+            AccountId = acc.Id
         );
         insert c;
         return c;
@@ -177,7 +180,7 @@ private class CrossObjectMergeQueueableTest {
         // because Salesforce executes chained Queueables within Test.stopTest().
         Lead lead1    = createLead('Alpha', 'One', 'alpha1@test.com');
         Lead lead2    = createLead('Alpha', 'Two', 'alpha2@test.com');
-        Contact contact = createContact('Alpha', 'Master', 'alpha.master@test.com');
+        Contact contact = createContact('Alpha', 'Master', 'alpha1@test.com');
         DuplicateCluster__c cluster = createCluster();
 
         Test.startTest();
@@ -206,7 +209,7 @@ private class CrossObjectMergeQueueableTest {
     static void testExecute_twoLeads_clusterMergedAfterAllLeads() {
         Lead lead1    = createLead('Beta', 'One', 'beta1@test.com');
         Lead lead2    = createLead('Beta', 'Two', 'beta2@test.com');
-        Contact contact = createContact('Beta', 'Master', 'beta.master@test.com');
+        Contact contact = createContact('Beta', 'Master', 'beta1@test.com');
         DuplicateCluster__c cluster = createCluster();
 
         Test.startTest();
