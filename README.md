@@ -1,18 +1,28 @@
-# Salesforce DX Project: Next Steps
+# UDC Duplicate Records
 
-Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+Salesforce DX project — Duplicate Management Console for Contacts and Leads.
 
-## How Do You Plan to Deploy Your Changes?
+## Overview
 
-Do you want to deploy a set of changes, or create a self-contained application? Choose a [development model](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models).
+A batch-based duplicate detection and resolution system for 200K+ Contact and Lead records. Built as a Lightning Web Component console with cluster visualization, side-by-side field comparison, and merge/ignore actions.
 
-## Configure Your Salesforce DX Project
+## Architecture
 
-The `sfdx-project.json` file contains useful configuration information for your project. See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) in the _Salesforce DX Developer Guide_ for details about this file.
+- **Detection**: Batch Apex with three-layer blocking keys (Email, Phone, Name) running nightly
+- **Storage**: Custom objects `DuplicateCluster__c` and `DuplicateClusterMember__c`
+- **UI**: LWC console (Cloudingo-style) with 30/70 list/detail layout
+- **Merge**: Same-object DML merge + cross-object Queueable (convertLead → merge Contact)
+- **Ignore**: `DuplicateIgnore__c` with ExternalId `PairKey__c` — survives batch re-runs
 
-## Read All About It
+## SDD Planning Artifacts
 
-- [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
-- [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
+All specs, design, and tasks are under `openspec/changes/duplicate-management-console/`.
+
+## Stack
+
+- Salesforce DX, API v66.0 (Summer '25)
+- Apex, LWC, SOQL
+
+## ⚠️ Before Production
+
+Request a custom index on `Email_Block__c` (Contact + Lead) via Salesforce Support before running the batch in production. Formula fields are not indexed by default.
