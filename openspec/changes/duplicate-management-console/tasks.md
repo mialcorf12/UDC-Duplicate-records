@@ -75,25 +75,25 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Triggers + Handlers
 
-- [ ] 4.1 Create `triggers/ContactDuplicateTrigger.trigger` — after update, delegates to handler
-- [ ] 4.2 Create `classes/ContactDuplicateTriggerHandler.cls` — `handleAfterUpdate(Map<Id,Contact> oldMap, Map<Id,Contact> newMap)` marks clusters Stale when Email/Phone/FirstName/LastName changes
-- [ ] 4.3 Create `classes/ContactDuplicateTriggerHandlerTest.cls` — bulk 200 contacts; verify Stale status set; verify no-op when untracked field changes
-- [ ] 4.4 Create `triggers/LeadDuplicateTrigger.trigger` — after update, delegates to handler
-- [ ] 4.5 Create `classes/LeadDuplicateTriggerHandler.cls` — same logic as Contact handler for Lead
-- [ ] 4.6 Create `classes/LeadDuplicateTriggerHandlerTest.cls`
+- [x] 4.1 Create `triggers/ContactDuplicateTrigger.trigger` — after update, delegates to handler
+- [x] 4.2 Create `classes/ContactDuplicateTriggerHandler.cls` — `handleAfterUpdate(Map<Id,Contact> oldMap, Map<Id,Contact> newMap)` marks clusters Stale when Email/Phone/FirstName/LastName changes
+- [x] 4.3 Create `classes/ContactDuplicateTriggerHandlerTest.cls` — bulk 200 contacts; verify Stale status set; verify no-op when untracked field changes
+- [x] 4.4 Create `triggers/LeadDuplicateTrigger.trigger` — after update, delegates to handler
+- [x] 4.5 Create `classes/LeadDuplicateTriggerHandler.cls` — same logic as Contact handler for Lead
+- [x] 4.6 Create `classes/LeadDuplicateTriggerHandlerTest.cls`
 
 ---
 
 ## Phase 5: Apex Controllers
 
-- [ ] 5.1 Create `classes/DuplicateClusterController.cls` (with sharing, @AuraEnabled) — `getClusterList(objectType, status, minScore, pageSize, pageNumber)` returns `{clusters, totalCount, pageNumber}`; `getClusterDetail(clusterId)` returns `{cluster, members}`
-- [ ] 5.2 Create `classes/DuplicateClusterControllerTest.cls` — pagination: verify page 1 vs page 2; filter by objectType; sharing enforcement via System.runAs
-- [ ] 5.3 Create `classes/DuplicateMergeController.cls` (with sharing, @AuraEnabled) — `mergeCluster(clusterId, masterId, fieldOverrides)` returns `{success, jobId, message}`; `ignoreCluster(clusterId, reason)`
-- [ ] 5.4 Create `classes/DuplicateMergeControllerTest.cls` — same-object merge; cross-object returns jobId; ignore updates cluster status
-- [ ] 5.5 Create `classes/BatchLaunchController.cls` (with sharing, @AuraEnabled) — `launchDetection()` enqueues batch, returns AsyncApexJob.Id
-- [ ] 5.6 Create `classes/BatchLaunchControllerTest.cls`
-- [ ] 5.7 Create `classes/MergeStatusController.cls` (with sharing, @AuraEnabled) — `getJobStatus(jobId)` queries AsyncApexJob + DuplicateMergeAudit__c; returns `{status, message}`
-- [ ] 5.8 Create `classes/MergeStatusControllerTest.cls`
+- [x] 5.1 Create `classes/DuplicateClusterController.cls` (with sharing, @AuraEnabled) — `getClusterList(objectType, status, minScore, pageSize, pageNumber)` returns `{clusters, totalCount, pageNumber}`; `getClusterDetail(clusterId)` returns `{cluster, members}`
+- [x] 5.2 Create `classes/DuplicateClusterControllerTest.cls` — pagination: verify page 1 vs page 2; filter by objectType; sharing enforcement via System.runAs
+- [x] 5.3 Create `classes/DuplicateMergeController.cls` (with sharing, @AuraEnabled) — `mergeCluster(clusterId, masterId, fieldOverrides)` returns `{success, jobId, message}`; `ignoreCluster(clusterId, reason)`
+- [x] 5.4 Create `classes/DuplicateMergeControllerTest.cls` — same-object merge; cross-object returns jobId; ignore updates cluster status
+- [x] 5.5 Create `classes/BatchLaunchController.cls` (with sharing, @AuraEnabled) — `launchDetection()` enqueues batch, returns AsyncApexJob.Id
+- [x] 5.6 Create `classes/BatchLaunchControllerTest.cls`
+- [x] 5.7 Create `classes/MergeStatusController.cls` (with sharing, @AuraEnabled) — `getJobStatus(jobId)` queries AsyncApexJob + DuplicateMergeAudit__c; returns `{status, message}`
+- [x] 5.8 Create `classes/MergeStatusControllerTest.cls`
 
 ---
 

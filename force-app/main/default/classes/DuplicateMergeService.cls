@@ -53,7 +53,7 @@ public with sharing class DuplicateMergeService {
             List<String> secondaryIds = new List<String>();
             String objectType = cluster.ObjectType__c;
 
-            for (DuplicateClusterMember__c member : cluster.DuplicateClusterMembers__r) {
+            for (DuplicateClusterMember__c member : cluster.ClusterMembers__r) {
                 if (member.RecordId__c != String.valueOf(masterId)) {
                     secondaryIds.add(member.RecordId__c);
                 }
