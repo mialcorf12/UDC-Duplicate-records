@@ -1,0 +1,49 @@
+<template>
+    <template if:true={isVisible}>
+        <div class="slds-var-m-around_small">
+            <template if:true={isFailed}>
+                <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
+                    <span class="slds-assistive-text">Error</span>
+                    <lightning-icon
+                        icon-name="utility:error"
+                        variant="inverse"
+                        size="x-small"
+                        class="slds-var-m-right_x-small"
+                    ></lightning-icon>
+                    <h2>Merge failed. Please review the audit log and try again.</h2>
+                </div>
+            </template>
+            <template if:false={isFailed}>
+                <div class="slds-progress slds-progress-bar">
+                    <ol class="slds-progress__list">
+                        <template for:each={steps} for:item="s">
+                            <li key={s.label} class={s.cssClass} aria-labelledby={s.labelId}>
+                                <button class="slds-button slds-progress__marker" aria-label={s.label} title={s.label} aria-describedby={s.labelId}>
+                                    <span class="slds-assistive-text">{s.label}</span>
+                                    <lightning-icon
+                                        if:true={s.isComplete}
+                                        icon-name="utility:check"
+                                        size="x-small"
+                                        variant="inverse"
+                                        alternative-text={s.label}
+                                    ></lightning-icon>
+                                </button>
+                                <span id={s.labelId} class="slds-progress__item_content slds-grid slds-grid_align-spread">
+                                    {s.label}
+                                </span>
+                            </li>
+                        </template>
+                    </ol>
+                    <div class="slds-progress-bar slds-progress-bar_x-small" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progressPercent} role="progressbar">
+                        <span class="slds-progress-bar__value" style={progressStyle}>
+                            <span class="slds-assistive-text">Progress: {progressPercent}%</span>
+                        </span>
+                    </div>
+                </div>
+                <p class="slds-text-body_small slds-text-color_weak slds-var-m-top_x-small slds-text-align_center">
+                    {statusLabel}
+                </p>
+            </template>
+        </div>
+    </template>
+</template>

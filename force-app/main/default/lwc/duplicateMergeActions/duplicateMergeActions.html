@@ -1,0 +1,49 @@
+<template>
+    <div class="slds-grid slds-wrap slds-grid_vertical-align-center slds-gutters_small">
+        <!-- Buttons -->
+        <div class="slds-col slds-no-flex">
+            <lightning-button
+                label="Merge"
+                variant="brand"
+                onclick={handleMerge}
+                disabled={isMergeDisabled}
+            ></lightning-button>
+        </div>
+        <div class="slds-col slds-no-flex">
+            <lightning-button
+                label="Ignore"
+                variant="neutral"
+                onclick={handleIgnore}
+                disabled={isLoading}
+            ></lightning-button>
+        </div>
+
+        <!-- Spinner -->
+        <template if:true={isLoading}>
+            <div class="slds-col slds-no-flex">
+                <lightning-spinner
+                    alternative-text="Processing…"
+                    size="small"
+                ></lightning-spinner>
+            </div>
+        </template>
+
+        <!-- Status badge for polling feedback -->
+        <template if:true={currentStep}>
+            <div class="slds-col">
+                <span class="slds-badge slds-badge_lightest slds-var-m-left_small">
+                    {currentStep}
+                </span>
+            </div>
+        </template>
+
+        <!-- Error message -->
+        <template if:true={errorMessage}>
+            <div class="slds-col slds-size_1-of-1 slds-var-m-top_x-small">
+                <p class="slds-text-color_error slds-text-body_small">
+                    {errorMessage}
+                </p>
+            </div>
+        </template>
+    </div>
+</template>

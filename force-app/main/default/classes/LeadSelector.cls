@@ -33,7 +33,6 @@ public with sharing class LeadSelector {
             WHERE  Email_Block__c IN :blockKeys
             AND    IsConverted = false
             AND    IsDeleted = false
-            WITH   SECURITY_ENFORCED
         ];
     }
 
@@ -61,7 +60,6 @@ public with sharing class LeadSelector {
             WHERE  Phone_Block__c IN :blockKeys
             AND    IsConverted = false
             AND    IsDeleted = false
-            WITH   SECURITY_ENFORCED
         ];
     }
 
@@ -89,7 +87,6 @@ public with sharing class LeadSelector {
             WHERE  Name_Block__c IN :blockKeys
             AND    IsConverted = false
             AND    IsDeleted = false
-            WITH   SECURITY_ENFORCED
         ];
     }
 
@@ -113,7 +110,6 @@ public with sharing class LeadSelector {
                    IsConverted
             FROM   Lead
             WHERE  Id IN :ids
-            WITH   SECURITY_ENFORCED
         ];
     }
 }

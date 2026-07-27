@@ -1,0 +1,38 @@
+<template>
+    <div class="slds-grid slds-wrap slds-gutters_small slds-grid_vertical-align-end slds-var-p-around_small slds-border_bottom">
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-combobox
+                label="Object Type"
+                value={objectType}
+                options={objectTypeOptions}
+                onchange={handleObjectTypeChange}
+            ></lightning-combobox>
+        </div>
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-combobox
+                label="Status"
+                value={status}
+                options={statusOptions}
+                onchange={handleStatusChange}
+            ></lightning-combobox>
+        </div>
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-input
+                type="number"
+                label="Min Score"
+                value={minScore}
+                min="0"
+                max="100"
+                step="5"
+                onchange={handleMinScoreChange}
+            ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-4">
+            <lightning-button
+                label="Apply"
+                variant="brand"
+                onclick={handleApply}
+            ></lightning-button>
+        </div>
+    </div>
+</template>

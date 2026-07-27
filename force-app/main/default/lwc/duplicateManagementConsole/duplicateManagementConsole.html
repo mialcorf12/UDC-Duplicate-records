@@ -1,0 +1,38 @@
+<template>
+    <div class="slds-grid slds-wrap console-container">
+        <!-- Left column: Filter + List (30%) -->
+        <div class="slds-col slds-size_4-of-12 slds-border_right left-panel">
+            <c-duplicate-filter-bar
+                onfilterchange={handleFilterChange}
+            ></c-duplicate-filter-bar>
+            <c-duplicate-cluster-list
+                object-type={objectType}
+                status={status}
+                min-score={minScore}
+                onclusterselect={handleClusterSelect}
+            ></c-duplicate-cluster-list>
+        </div>
+
+        <!-- Right column: Detail (70%) -->
+        <div class="slds-col slds-size_8-of-12 right-panel">
+            <template if:true={selectedClusterId}>
+                <c-duplicate-cluster-detail
+                    cluster-id={selectedClusterId}
+                    onclustermerged={handleClusterMerged}
+                ></c-duplicate-cluster-detail>
+            </template>
+            <template if:false={selectedClusterId}>
+                <div class="slds-illustration slds-illustration_small slds-var-p-around_xx-large">
+                    <div class="slds-text-longform slds-text-align_center">
+                        <p class="slds-text-heading_medium slds-text-color_weak">
+                            Select a cluster to review
+                        </p>
+                        <p class="slds-text-body_regular slds-text-color_weak">
+                            Choose a duplicate cluster from the list on the left to compare records and take action.
+                        </p>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>

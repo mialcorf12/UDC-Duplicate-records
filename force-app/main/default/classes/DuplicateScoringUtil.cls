@@ -135,9 +135,9 @@ public with sharing class DuplicateScoringUtil {
 
         // Count matches
         for (Integer i = 0; i < len1; i++) {
-            Integer start = Math.max(0, i - matchWindow);
-            Integer end   = Math.min(len2 - 1, i + matchWindow);
-            for (Integer j = start; j <= end; j++) {
+            Integer start    = Math.max(0, i - matchWindow);
+            Integer matchEnd = Math.min(len2 - 1, i + matchWindow);
+            for (Integer j = start; j <= matchEnd; j++) {
                 if (s2Matched[j]) { continue; }
                 if (s1.charAt(i) != s2.charAt(j)) { continue; }
                 s1Matched[i] = true;
@@ -237,17 +237,23 @@ public with sharing class DuplicateScoringUtil {
     }
 
     private static String getCompanyName(SObject record) {
-        // For Lead, Company is a direct field
-        Object companyObj = record.get('Company');
-        if (companyObj != null) {
-            return ((String) companyObj).trim().toLowerCase();
-        }
-        // For Contact, look at Account.Name
-        SObject acct = record.getSObject('Account');
-        if (acct != null) {
-            String name = (String) acct.get('Name');
-            if (String.isNotBlank(name)) {
-                return name.trim().toLowerCase();
+        // Determine object type to avoid Invalid field exceptions
+        String objectType = record.getSObjectType().getDescribe().getName();
+
+        if (objectType == 'Lead') {
+            // Lead.Company is a direct field
+            Object companyObj = record.get('Company');
+            if (companyObj != null) {
+                return ((String) companyObj).trim().toLowerCase();
+            }
+        } else {
+            // Contact: traverse Account relationship
+            SObject acct = record.getSObject('Account');
+            if (acct != null) {
+                String name = (String) acct.get('Name');
+                if (String.isNotBlank(name)) {
+                    return name.trim().toLowerCase();
+                }
             }
         }
         return '';

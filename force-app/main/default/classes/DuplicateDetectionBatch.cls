@@ -10,7 +10,7 @@
  *              Scoring weights: Email(40) + Phone(30) + Name(20) + Company(10) = 100 max
  *              Threshold: ≥ 70 to qualify as a duplicate pair
  */
-public class DuplicateDetectionBatch implements Database.Batchable<SObject>, Database.Stateful {
+public without sharing class DuplicateDetectionBatch implements Database.Batchable<SObject>, Database.Stateful {
 
     // Stateful counters — survive across execute() invocations
     private Integer clustersCreated = 0;
