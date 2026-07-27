@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Immutable audit log for every merge operation. Captures merge outcome, field overrides applied, and any error details for failed merges.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableLicensing>false</enableLicensing>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Duplicate Merge Audit</label>
+    <nameField>
+        <label>Audit Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>DMA-{0000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <pluralLabel>Duplicate Merge Audits</pluralLabel>
+    <searchLayouts/>
+    <sharingModel>ReadWrite</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Represents a single record that belongs to a duplicate cluster. Master-Detail to DuplicateCluster__c enables cascade delete and roll-up summaries.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableLicensing>false</enableLicensing>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Duplicate Cluster Member</label>
+    <nameField>
+        <label>Member Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>DCM-{0000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <pluralLabel>Duplicate Cluster Members</pluralLabel>
+    <searchLayouts/>
+    <sharingModel>ControlledByParent</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

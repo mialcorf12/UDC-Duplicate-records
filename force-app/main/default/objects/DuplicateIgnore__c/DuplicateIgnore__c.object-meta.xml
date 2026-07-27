@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Registry of record pairs explicitly marked as non-duplicates. PairKey__c ExternalId prevents re-processing ignored pairs across batch runs.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableLicensing>false</enableLicensing>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Duplicate Ignore</label>
+    <nameField>
+        <label>Ignore Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>DI-{0000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <pluralLabel>Duplicate Ignores</pluralLabel>
+    <searchLayouts/>
+    <sharingModel>ReadWrite</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Default</label>
+    <protected>false</protected>
+    <values>
+        <field>BatchCronExpression__c</field>
+        <value xsi:type="xsd:string">0 0 2 * * ?</value>
+    </values>
+    <values>
+        <field>ScoreThreshold__c</field>
+        <value xsi:type="xsd:double">70</value>
+    </values>
+    <values>
+        <field>EnabledObjects__c</field>
+        <value xsi:type="xsd:string">Contact,Lead</value>
+    </values>
+    <values>
+        <field>BatchScope__c</field>
+        <value xsi:type="xsd:double">200</value>
+    </values>
+</CustomMetadata>

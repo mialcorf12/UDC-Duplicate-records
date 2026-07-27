@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Grants CRUD access to all Duplicate Management custom objects and read access to DuplicateSettings custom metadata. Assign to admin users who manage the duplicate console.</description>
+    <label>Duplicate Management Admin</label>
+    <userLicense>Salesforce</userLicense>
+
+    <!-- ── Object Permissions ── -->
+
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>DuplicateCluster__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>DuplicateClusterMember__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>DuplicateIgnore__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>DuplicateMergeAudit__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+
+    <!-- ── Field Permissions: DuplicateCluster__c ── -->
+
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateCluster__c.ObjectType__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateCluster__c.Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateCluster__c.ClusterScore__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateCluster__c.BlockingKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateCluster__c.DetectedDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateCluster__c.BatchJobId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>DuplicateCluster__c.RecordCount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+
+    <!-- ── Field Permissions: DuplicateClusterMember__c ── -->
+
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateClusterMember__c.Cluster__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateClusterMember__c.RecordId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateClusterMember__c.ObjectType__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateClusterMember__c.IsMaster__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateClusterMember__c.FieldSnapshotJSON__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+
+    <!-- ── Field Permissions: DuplicateIgnore__c ── -->
+
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateIgnore__c.PairKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateIgnore__c.IgnoredBy__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateIgnore__c.IgnoredDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateIgnore__c.Reason__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+
+    <!-- ── Field Permissions: DuplicateMergeAudit__c ── -->
+
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.ClusterId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.MasterRecordId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.MergedRecordIds__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.ErrorMessage__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.MergedBy__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.MergedDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.FieldOverridesJSON__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>DuplicateMergeAudit__c.MergeType__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+
+    <!-- ── Custom Metadata Access: DuplicateSettings__mdt (read only) ── -->
+
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>DuplicateSettings__mdt</name>
+    </customMetadataTypeAccesses>
+
+</PermissionSet>
