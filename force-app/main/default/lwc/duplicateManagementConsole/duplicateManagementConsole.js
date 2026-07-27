@@ -1,6 +1,9 @@
 import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import launchDetection from '@salesforce/apex/BatchLaunchController.launchDetection';
 import launchBulkMerge from '@salesforce/apex/DuplicateMergeController.launchBulkMerge';
+import getArchivableDates from '@salesforce/apex/DuplicateClusterController.getArchivableDates';
+import archiveClustersByDate from '@salesforce/apex/DuplicateClusterController.archiveClustersByDate';
 
 export default class DuplicateManagementConsole extends LightningElement {
     @track selectedClusterId = null;
@@ -9,9 +12,19 @@ export default class DuplicateManagementConsole extends LightningElement {
     @track minScore = 0;
 
     @track activeSections = ['clusters'];
+
     @track bulkMergeScore = 100;
     @track bulkMergeObjectType = '';
     @track isBulkMerging = false;
+    @track bulkMergeJobId = null;
+
+    @track isDetecting = false;
+    @track detectionJobId = null;
+    @track lastDetectionDate = null;
+
+    @track archiveDate = null;
+    @track archiveDateOptions = [];
+    @track isArchiving = false;
 
     get bulkMergeObjectTypeOptions() {
         return [
@@ -20,6 +33,16 @@ export default class DuplicateManagementConsole extends LightningElement {
             { label: 'Lead',    value: 'Lead' },
             { label: 'Mixed',   value: 'Mixed' }
         ];
+    }
+
+    connectedCallback() {
+        getArchivableDates()
+            .then(options => { 
+                this.archiveDateOptions = options; 
+                this.lastDetectionDate = options.length > 0 ? options[0].value : null;
+                this.isArchiving = options.length > 0 ? false : true;
+            })
+            .catch(() => {});
     }
 
     handleFilterChange(event) {
@@ -40,6 +63,27 @@ export default class DuplicateManagementConsole extends LightningElement {
         this.selectedClusterId = null;
     }
 
+    handleRunDetection() {
+        this.isDetecting = true;
+        launchDetection()
+            .then(jobId => {
+                this.detectionJobId = jobId;
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Detection Started',
+                    message: `Batch job enqueued: ${jobId}`,
+                    variant: 'success'
+                }));
+            })
+            .catch(error => {
+                this.isDetecting = false;
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Error',
+                    message: error.body ? error.body.message : 'An unexpected error occurred.',
+                    variant: 'error'
+                }));
+            });
+    }
+
     handleBulkScoreChange(event) {
         this.bulkMergeScore = parseFloat(event.detail.value);
     }
@@ -53,6 +97,7 @@ export default class DuplicateManagementConsole extends LightningElement {
         const objectType = this.bulkMergeObjectType || null;
         launchBulkMerge({ minScore: this.bulkMergeScore, objectType })
             .then(jobId => {
+                this.bulkMergeJobId = jobId;
                 this.dispatchEvent(new ShowToastEvent({
                     title: 'Bulk Merge Started',
                     message: `Job ID: ${jobId}`,
@@ -65,9 +110,35 @@ export default class DuplicateManagementConsole extends LightningElement {
                     message: error.body ? error.body.message : 'An unexpected error occurred.',
                     variant: 'error'
                 }));
+            });
+    }
+
+    handleArchiveDateChange(event) {
+        this.archiveDate = event.detail.value;
+    }
+
+    handleArchive() {
+        if (!this.archiveDate) { return; }
+        this.isArchiving = true;
+        archiveClustersByDate({ dateValue: this.archiveDate })
+            .then(count => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Archive Completed',
+                    message: `${count} clusters archived successfully.`,
+                    variant: 'success'
+                }));
+                return getArchivableDates();
             })
-            .finally(() => {
-                this.isBulkMerging = false;
+            .then(options => {
+                this.archiveDateOptions = options;
+                this.archiveDate = null;
+            })
+            .catch(error => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Error',
+                    message: error.body ? error.body.message : 'An unexpected error occurred.',
+                    variant: 'error'
+                }));
             });
     }
 }

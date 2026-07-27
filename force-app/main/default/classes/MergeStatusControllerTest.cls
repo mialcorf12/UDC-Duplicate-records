@@ -31,7 +31,7 @@ private class MergeStatusControllerTest {
             String.valueOf(jobId)
         );
 
-        System.assertNotNull(result, 'Result should not be null');
+        System.assertNotEquals(null, result, 'Result should not be null');
         System.assert(result.containsKey('status'),  'Result must have a status key');
         System.assert(result.containsKey('message'), 'Result must have a message key');
 
