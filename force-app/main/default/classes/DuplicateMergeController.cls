@@ -35,25 +35,25 @@ public with sharing class DuplicateMergeController {
             }
 
             if (cluster.ObjectType__c == 'Mixed') {
-                // ── Cross-object path: find the Lead member ──
-                Id leadId    = null;
-                Id contactId = (Id) masterId;
+                // ── Cross-object path: collect all Lead members ──
+                List<Id> leadIds = new List<Id>();
+                Id contactId     = (Id) masterId;
 
                 for (DuplicateClusterMember__c m : cluster.ClusterMembers__r) {
                     if (m.ObjectType__c == 'Lead' &&
                         m.RecordId__c   != masterId) {
-                        leadId = (Id) m.RecordId__c;
+                        leadIds.add((Id) m.RecordId__c);
                     }
                 }
 
-                if (leadId == null) {
+                if (leadIds.isEmpty()) {
                     throw new AuraHandledException(
                         'No Lead member found in Mixed cluster: ' + clusterId
                     );
                 }
 
                 return DuplicateMergeService.initiateCrossObjectMerge(
-                    (Id) clusterId, leadId, contactId, fieldOverrides
+                    (Id) clusterId, leadIds, contactId, fieldOverrides
                 );
 
             } else {
@@ -112,5 +112,23 @@ public with sharing class DuplicateMergeController {
 
         // Update cluster status to Ignored
         update new DuplicateCluster__c(Id = cluster.Id, Status__c = 'Ignored');
+    }
+
+    /**
+     * @description Launches a batch job that merges all Open clusters whose score is
+     *              at or above minScore, optionally filtered by objectType.
+     *
+     * @param minScore   Minimum ClusterScore__c (inclusive). Use 100 for exact matches only.
+     * @param objectType 'Contact', 'Lead', 'Mixed', or null / '' for all types.
+     * @return The AsyncApexJob Id of the launched batch as a String.
+     */
+    @AuraEnabled
+    public static String launchBulkMerge(Decimal minScore, String objectType) {
+        if (minScore == null || minScore < 0) {
+            throw new AuraHandledException('minScore must be a non-negative number');
+        }
+        String normalizedType = String.isBlank(objectType) ? null : objectType;
+        Id jobId = Database.executeBatch(new BulkMergeBatch(minScore, normalizedType), 1);
+        return String.valueOf(jobId);
     }
 }

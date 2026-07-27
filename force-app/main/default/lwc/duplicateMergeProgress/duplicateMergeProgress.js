@@ -34,6 +34,10 @@ export default class DuplicateMergeProgress extends LightningElement {
         return this.step === 'Failed';
     }
 
+    get isCompleted() {
+        return this.step === 'Completed';
+    }
+
     get isCrossObject() {
         return this.step === 'Converting' || this.step === 'Merging';
     }
@@ -54,10 +58,15 @@ export default class DuplicateMergeProgress extends LightningElement {
             if (isComplete) cssClass += ' slds-is-completed';
             else if (isActive) cssClass += ' slds-is-active';
 
+            let containerClass = 'step-item';
+            if (isComplete) containerClass += ' is-complete';
+            else if (isActive) containerClass += ' is-active';
+
             return {
                 label: STEP_LABELS[s] || s,
                 labelId: `step-label-${s}`,
                 cssClass,
+                containerClass,
                 isComplete
             };
         });

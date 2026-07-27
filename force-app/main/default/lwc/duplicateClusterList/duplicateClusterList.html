@@ -20,6 +20,9 @@
         <!-- Cluster list -->
         <template if:false={isLoading}>
             <template if:true={hasClusters}>
+                <p class="slds-text-body_small slds-text-color_weak slds-var-p-horizontal_small slds-var-p-top_x-small">
+                    Showing {clusters.length} of {totalCount} total records.
+                </p>
                 <ul class="slds-has-dividers_bottom-space" role="listbox">
                     <template for:each={clusters} for:item="cluster">
                         <li key={cluster.Id} role="option" style="height: 40px; align-content: space-evenly;">

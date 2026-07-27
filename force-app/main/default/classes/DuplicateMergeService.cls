@@ -123,15 +123,22 @@ public with sharing class DuplicateMergeService {
                 }
 
                 // Apply field overrides
-                if (fieldOverrides != null && !fieldOverrides.isEmpty()) {
-                    for (String fieldName : fieldOverrides.keySet()) {
-                        masterContact.put(fieldName, fieldOverrides.get(fieldName));
+                Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+                if (!safeOverrides.isEmpty()) {
+                    for (String fieldName : safeOverrides.keySet()) {
+                        masterContact.put(fieldName, safeOverrides.get(fieldName));
                     }
                     update masterContact;
                 }
 
                 // Merge (max 2 secondaries)
-                Database.merge(masterContact, secondaryContacts);
+                // Pass Id-only records to avoid INVALID_FIELD_FOR_INSERT_UPDATE caused by
+                // relationship fields (Account.Name) loaded on the queried SObjects.
+                List<Id> secondaryContactIds = new List<Id>();
+                for (Contact c : secondaryContacts) {
+                    secondaryContactIds.add(c.Id);
+                }
+                Database.merge(new Contact(Id = masterContact.Id), secondaryContactIds);
             }
 
             // ── Update cluster status ──
@@ -157,24 +164,39 @@ public with sharing class DuplicateMergeService {
         return result;
     }
 
+    private static Map<String, String> sanitizeContactOverrides(Map<String, String> overrides) {
+        if (overrides == null || overrides.isEmpty()) return new Map<String, String>();
+        final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account' };
+        Map<String, String> clean = new Map<String, String>();
+        for (String key : overrides.keySet()) {
+            if (BLOCKED.contains(key)) continue;
+            clean.put(key, overrides.get(key));
+        }
+        if (overrides.containsKey('Account') && !overrides.containsKey('AccountId')) {
+            clean.put('AccountId', overrides.get('Account'));
+        }
+        return clean;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Cross-object merge: Lead → Contact (async via Queueable)
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * @description Initiates a cross-object (Lead → Contact) merge by enqueueing
-     *              a CrossObjectMergeQueueable job. Returns the async job ID for polling.
+     *              a CrossObjectMergeQueueable job. Supports N leads via self-chaining.
+     *              Returns the async job ID of the first job for polling.
      *
      * @param clusterId      The DuplicateCluster__c that owns this merge.
-     * @param leadId         The Lead to convert and merge.
+     * @param leadIds        All Lead IDs to convert and merge into the master Contact.
      * @param contactId      The master Contact to merge into.
      * @param fieldOverrides Map of field API name → winning value.
      * @return Map<String, Object>: { success: Boolean, jobId: String }
      */
     public static Map<String, Object> initiateCrossObjectMerge(
-        Id clusterId,
-        Id leadId,
-        Id contactId,
+        Id                  clusterId,
+        List<Id>            leadIds,
+        Id                  contactId,
         Map<String, String> fieldOverrides
     ) {
         Map<String, Object> result = new Map<String, Object>{
@@ -183,7 +205,7 @@ public with sharing class DuplicateMergeService {
         };
 
         Id jobId = System.enqueueJob(
-            new CrossObjectMergeQueueable(leadId, contactId, clusterId, fieldOverrides)
+            new CrossObjectMergeQueueable(leadIds, contactId, clusterId, fieldOverrides, null)
         );
 
         result.put('success', true);

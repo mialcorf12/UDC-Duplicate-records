@@ -1,11 +1,11 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
 import getClusterDetail from '@salesforce/apex/DuplicateClusterController.getClusterDetail';
+import setMasterRecord from '@salesforce/apex/DuplicateClusterController.setMasterRecord';
 
 export default class DuplicateClusterDetail extends LightningElement {
     @track fieldOverrideMap = {};
     @track selectedMasterId = null;
-    @track mergeStep = 'Idle';
     @track errorMessage = null;
 
     _clusterId = null;
@@ -20,7 +20,6 @@ export default class DuplicateClusterDetail extends LightningElement {
         // Reset state when cluster changes
         this.fieldOverrideMap = {};
         this.selectedMasterId = null;
-        this.mergeStep = 'Idle';
         this.errorMessage = null;
     }
 
@@ -38,6 +37,17 @@ export default class DuplicateClusterDetail extends LightningElement {
                 this.selectedMasterId = masterMember.RecordId__c;
             } else if (members.length > 0) {
                 this.selectedMasterId = members[0].RecordId__c;
+            }
+
+            // Auto-select the first record for all fields when cluster is not Merged
+            const clusterStatus = data.cluster?.Status__c;
+            if (clusterStatus !== 'Merged' && clusterStatus !== 'Ignored' && members.length > 0) {
+                const firstId = members[0].RecordId__c || members[0].Id;
+                let firstSnapshot = {};
+                try { firstSnapshot = JSON.parse(members[0].FieldSnapshotJSON__c || '{}'); } catch (e) {}
+                const initialOverrides = {};
+                Object.keys(firstSnapshot).forEach((f) => { initialOverrides[f] = firstId; });
+                this.fieldOverrideMap = initialOverrides;
             }
         } else if (error) {
             this.errorMessage = error.body
@@ -93,6 +103,25 @@ export default class DuplicateClusterDetail extends LightningElement {
         }));
     }
 
+    get isMergeAllowed() {
+        const status = this.cluster?.Status__c;
+        return status !== 'Merged' && status !== 'Ignored';
+    }
+
+    get isMerged() {
+        return this.cluster?.Status__c === 'Merged';
+    }
+
+    get isMasterDisabled() {
+        const status = this.cluster?.Status__c;
+        return status === 'Merged' || status === 'Ignored' || status === 'Stale';
+    }
+
+    get isReadOnly() {
+        const status = this.cluster?.Status__c;
+        return status === 'Ignored' || status === 'Stale';
+    }
+
     get formattedDate() {
         if (!this.cluster || !this.cluster.DetectedDate__c) return '';
         try {
@@ -103,25 +132,41 @@ export default class DuplicateClusterDetail extends LightningElement {
     }
 
     handleMasterChange(event) {
-        this.selectedMasterId = event.target.value;
+        const newMasterId = event.target.value;
+        this.selectedMasterId = newMasterId;
+        setMasterRecord({ clusterId: this._clusterId, memberRecordId: newMasterId })
+            .catch(error => {
+                this.errorMessage = error.body ? error.body.message : 'Failed to update master record.';
+            });
     }
 
     handleFieldOverride(event) {
         const { fieldName, winningRecordId } = event.detail;
-        // Spread to trigger reactivity
         this.fieldOverrideMap = {
             ...this.fieldOverrideMap,
             [fieldName]: winningRecordId
         };
     }
 
+    get resolvedFieldOverrides() {
+        const result = {};
+        for (const [fieldName, winningRecordId] of Object.entries(this.fieldOverrideMap || {})) {
+            const member = this.rawMembers.find(
+                (m) => (m.RecordId__c || m.Id) === winningRecordId
+            );
+            if (member) {
+                let snapshot = {};
+                try { snapshot = JSON.parse(member.FieldSnapshotJSON__c || '{}'); } catch (e) {}
+                result[fieldName] = snapshot[fieldName] ?? '';
+            }
+        }
+        return result;
+    }
+
     handleMergeDone(event) {
         const { success, message } = event.detail;
 
-        if (success) {
-            this.mergeStep = 'Completed';
-        } else {
-            this.mergeStep = 'Failed';
+        if (!success) {
             this.errorMessage = message || 'Merge failed.';
         }
 

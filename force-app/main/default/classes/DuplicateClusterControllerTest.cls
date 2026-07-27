@@ -180,7 +180,7 @@ private class DuplicateClusterControllerTest {
         List<DuplicateClusterMember__c> returnedMembers =
             (List<DuplicateClusterMember__c>) result.get('members');
 
-        System.assertNotNull(returnedCluster, 'Cluster should be present');
+        System.assertNotEquals(null, returnedCluster, 'Cluster should be present');
         System.assertEquals(cluster.Id, returnedCluster.Id, 'Returned cluster Id should match');
         System.assertEquals(2, returnedMembers.size(), 'Two members should be returned');
     }
@@ -236,7 +236,58 @@ private class DuplicateClusterControllerTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Scenario 8: Sharing enforcement via System.runAs()
+    // Scenario 8: setMasterRecord — swaps IsMaster__c to the selected member
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void setMasterRecordUpdatesFlagOnCorrectMember() {
+        Contact c1 = new Contact(FirstName = 'B', LastName = 'One');
+        Contact c2 = new Contact(FirstName = 'B', LastName = 'Two');
+        insert new List<Contact>{ c1, c2 };
+
+        DuplicateCluster__c cluster = new DuplicateCluster__c(
+            ObjectType__c   = 'Contact',
+            Status__c       = 'Open',
+            ClusterScore__c = 90.0,
+            DetectedDate__c = DateTime.now()
+        );
+        insert cluster;
+
+        DuplicateClusterMember__c memberA = new DuplicateClusterMember__c(
+            Cluster__c    = cluster.Id,
+            RecordId__c   = String.valueOf(c1.Id),
+            ObjectType__c = 'Contact',
+            IsMaster__c   = true
+        );
+        DuplicateClusterMember__c memberB = new DuplicateClusterMember__c(
+            Cluster__c    = cluster.Id,
+            RecordId__c   = String.valueOf(c2.Id),
+            ObjectType__c = 'Contact',
+            IsMaster__c   = false
+        );
+        insert new List<DuplicateClusterMember__c>{ memberA, memberB };
+
+        Test.startTest();
+        DuplicateClusterController.setMasterRecord(
+            String.valueOf(cluster.Id),
+            String.valueOf(c2.Id)
+        );
+        Test.stopTest();
+
+        Map<Id, DuplicateClusterMember__c> updated = new Map<Id, DuplicateClusterMember__c>([
+            SELECT Id, RecordId__c, IsMaster__c
+            FROM DuplicateClusterMember__c
+            WHERE Cluster__c = :cluster.Id
+        ]);
+
+        System.assertEquals(false, updated.get(memberA.Id).IsMaster__c,
+            'Member A should no longer be master');
+        System.assertEquals(true, updated.get(memberB.Id).IsMaster__c,
+            'Member B should now be master');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Scenario 9: Sharing enforcement via System.runAs()
     // ─────────────────────────────────────────────────────────────────────────
 
     @isTest
@@ -276,7 +327,7 @@ private class DuplicateClusterControllerTest {
         // In a test context without explicit sharing rules, "with sharing" typically
         // sees all records for the creating user vs the running user.
         // The assertion here confirms the call completed and returned a valid shape.
-        System.assertNotNull(result, 'Result should not be null');
+        System.assertNotEquals(null, result, 'Result should not be null');
         System.assert(result.containsKey('clusters'),   'Result must have clusters key');
         System.assert(result.containsKey('totalCount'), 'Result must have totalCount key');
     }

@@ -200,6 +200,7 @@ public with sharing class DuplicateScoringUtil {
         String lastName  = (String) record.get('LastName');
         String company   = '';
 
+        String accountId = '';
         if (objectType == 'Lead') {
             company = (String) record.get('Company');
         } else {
@@ -208,6 +209,7 @@ public with sharing class DuplicateScoringUtil {
             if (acct != null) {
                 company = (String) acct.get('Name');
             }
+            accountId = (String) record.get('AccountId');
         }
 
         snapshot.put('Email',     email     != null ? email     : '');
@@ -215,6 +217,7 @@ public with sharing class DuplicateScoringUtil {
         snapshot.put('FirstName', firstName != null ? firstName : '');
         snapshot.put('LastName',  lastName  != null ? lastName  : '');
         snapshot.put('Company',   company   != null ? company   : '');
+        snapshot.put('AccountId', accountId != null ? accountId : '');
 
         return JSON.serialize(snapshot);
     }

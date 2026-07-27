@@ -1,6 +1,7 @@
 /**
  * @description Test class for CrossObjectMergeQueueable.
  *              Verifies: Lead converted, contacts merged, audit Status=Success.
+ *              N-lead chaining: multiple leads processed serially, single audit record.
  *              Error path: invalid Lead → audit Status=Failed.
  */
 @isTest
@@ -45,7 +46,7 @@ private class CrossObjectMergeQueueableTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Happy path
+    // Single-lead happy path (existing scenarios, updated constructor)
     // ─────────────────────────────────────────────────────────────────────────
 
     @isTest
@@ -54,19 +55,17 @@ private class CrossObjectMergeQueueableTest {
         Contact contact   = createContact('John', 'Smith', 'john.smith@test.com');
         DuplicateCluster__c cluster = createCluster();
 
-        // Add both as members
         insert new List<DuplicateClusterMember__c>{
             new DuplicateClusterMember__c(Cluster__c = cluster.Id, RecordId__c = String.valueOf(contact.Id), ObjectType__c = 'Contact', IsMaster__c = true,  FieldSnapshotJSON__c = '{}'),
             new DuplicateClusterMember__c(Cluster__c = cluster.Id, RecordId__c = String.valueOf(lead.Id),    ObjectType__c = 'Lead',    IsMaster__c = false, FieldSnapshotJSON__c = '{}')
         };
 
-        Map<String, String> overrides = new Map<String, String>();
-
         Test.startTest();
-        System.enqueueJob(new CrossObjectMergeQueueable(lead.Id, contact.Id, cluster.Id, overrides));
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, contact.Id, cluster.Id, new Map<String, String>(), null
+        ));
         Test.stopTest();
 
-        // Verify audit record Status = Success
         List<DuplicateMergeAudit__c> audits = [
             SELECT Id, Status__c, MergeType__c
             FROM   DuplicateMergeAudit__c
@@ -83,7 +82,9 @@ private class CrossObjectMergeQueueableTest {
         DuplicateCluster__c cluster = createCluster();
 
         Test.startTest();
-        System.enqueueJob(new CrossObjectMergeQueueable(lead.Id, contact.Id, cluster.Id, null));
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, contact.Id, cluster.Id, null, null
+        ));
         Test.stopTest();
 
         DuplicateCluster__c updatedCluster = [SELECT Status__c FROM DuplicateCluster__c WHERE Id = :cluster.Id];
@@ -97,7 +98,9 @@ private class CrossObjectMergeQueueableTest {
         DuplicateCluster__c cluster = createCluster();
 
         Test.startTest();
-        System.enqueueJob(new CrossObjectMergeQueueable(lead.Id, contact.Id, cluster.Id, null));
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, contact.Id, cluster.Id, null, null
+        ));
         Test.stopTest();
 
         Lead updatedLead = [SELECT IsConverted FROM Lead WHERE Id = :lead.Id];
@@ -115,10 +118,11 @@ private class CrossObjectMergeQueueableTest {
         };
 
         Test.startTest();
-        System.enqueueJob(new CrossObjectMergeQueueable(lead.Id, contact.Id, cluster.Id, overrides));
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, contact.Id, cluster.Id, overrides, null
+        ));
         Test.stopTest();
 
-        // Audit should exist regardless of whether override was applied
         List<DuplicateMergeAudit__c> audits = [SELECT Status__c, FieldOverridesJSON__c FROM DuplicateMergeAudit__c];
         System.assertEquals(1, audits.size(), 'Audit should be created');
         System.assertNotEquals(null, audits[0].FieldOverridesJSON__c, 'FieldOverridesJSON should be stored');
@@ -133,12 +137,12 @@ private class CrossObjectMergeQueueableTest {
         Contact contact = createContact('Test', 'User', 'test@error.com');
         DuplicateCluster__c cluster = createCluster();
 
-        // Use a non-existent Lead ID to force failure
-        // We'll use a fake but well-formed ID that won't be found
         Id fakeLead = '00Q000000000001AAA';
 
         Test.startTest();
-        System.enqueueJob(new CrossObjectMergeQueueable(fakeLead, contact.Id, cluster.Id, null));
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ fakeLead }, contact.Id, cluster.Id, null, null
+        ));
         Test.stopTest();
 
         List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
@@ -152,12 +156,104 @@ private class CrossObjectMergeQueueableTest {
         Lead lead       = createLead('Carlos', 'Lopez', 'clopez@test.com');
         Contact contact = createContact('Carlos', 'Lopez', 'clopez@test.com');
 
-        // No cluster ID — should still process and log audit
         Test.startTest();
-        System.enqueueJob(new CrossObjectMergeQueueable(lead.Id, contact.Id, null, null));
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, contact.Id, null, null, null
+        ));
         Test.stopTest();
 
         List<DuplicateMergeAudit__c> audits = [SELECT Status__c FROM DuplicateMergeAudit__c];
         System.assertEquals(1, audits.size(), 'Audit should be created even with null clusterId');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // N-leads scenarios
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void testExecute_twoLeads_singleAuditAccumulatesBothIds() {
+        // Test.stopTest() processes only the FIRST enqueued job synchronously.
+        // The self-chained second job runs in the same startTest/stopTest transaction
+        // because Salesforce executes chained Queueables within Test.stopTest().
+        Lead lead1    = createLead('Alpha', 'One', 'alpha1@test.com');
+        Lead lead2    = createLead('Alpha', 'Two', 'alpha2@test.com');
+        Contact contact = createContact('Alpha', 'Master', 'alpha.master@test.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead1.Id, lead2.Id }, contact.Id, cluster.Id, null, null
+        ));
+        Test.stopTest();
+
+        List<DuplicateMergeAudit__c> audits = [
+            SELECT Id, Status__c, MergedRecordIds__c
+            FROM   DuplicateMergeAudit__c
+        ];
+        System.assertEquals(1, audits.size(), 'N-lead merge must use a single shared audit record');
+        System.assertEquals('Success', audits[0].Status__c, 'Audit status should be Success after all leads processed');
+        System.assert(
+            audits[0].MergedRecordIds__c.contains(String.valueOf(lead1.Id)),
+            'MergedRecordIds__c must contain first lead ID'
+        );
+        System.assert(
+            audits[0].MergedRecordIds__c.contains(String.valueOf(lead2.Id)),
+            'MergedRecordIds__c must contain second lead ID'
+        );
+    }
+
+    @isTest
+    static void testExecute_twoLeads_clusterMergedAfterAllLeads() {
+        Lead lead1    = createLead('Beta', 'One', 'beta1@test.com');
+        Lead lead2    = createLead('Beta', 'Two', 'beta2@test.com');
+        Contact contact = createContact('Beta', 'Master', 'beta.master@test.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead1.Id, lead2.Id }, contact.Id, cluster.Id, null, null
+        ));
+        Test.stopTest();
+
+        DuplicateCluster__c updated = [SELECT Status__c FROM DuplicateCluster__c WHERE Id = :cluster.Id];
+        System.assertEquals('Merged', updated.Status__c, 'Cluster must be Merged only after the last lead is processed');
+    }
+
+    @isTest
+    static void testExecute_firstLeadFails_chainStops() {
+        Contact contact = createContact('Gamma', 'Master', 'gamma.master@test.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        Id fakeLead  = '00Q000000000001AAA';
+        Lead realLead = createLead('Gamma', 'Real', 'gamma.real@test.com');
+
+        // Put the bad lead first — chain should stop and never process the real one
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ fakeLead, realLead.Id }, contact.Id, cluster.Id, null, null
+        ));
+        Test.stopTest();
+
+        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
+        System.assertEquals(1, audits.size(), 'Should have exactly 1 audit record');
+        System.assertEquals('Failed', audits[0].Status__c, 'Audit must be Failed when first lead fails');
+
+        Lead rl = [SELECT IsConverted FROM Lead WHERE Id = :realLead.Id];
+        System.assertEquals(false, rl.IsConverted, 'Second lead must NOT be converted when chain stopped on failure');
+    }
+
+    @isTest
+    static void testExecute_emptyLeadList_doesNotCreateAudit() {
+        Contact contact = createContact('Delta', 'Master', 'delta.master@test.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>(), contact.Id, cluster.Id, null, null
+        ));
+        Test.stopTest();
+
+        List<DuplicateMergeAudit__c> audits = [SELECT Id FROM DuplicateMergeAudit__c];
+        System.assertEquals(0, audits.size(), 'Empty lead list should produce no audit record');
     }
 }

@@ -2,3 +2,7 @@
 /.sf
 /.sfdx
 **/.DS_Store
+/openspec/changes/archive/guia.md
+/records
+
+/force-app/main/default/lwc/jsconfig.json

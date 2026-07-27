@@ -66,7 +66,8 @@
                                     <input type="radio" name="masterRecord"
                                         id={opt.inputId} value={opt.recordId}
                                         checked={opt.isSelected} aria-label={opt.label}
-                                        title={opt.label} onchange={handleMasterChange} />
+                                        title={opt.label} onchange={handleMasterChange}
+                                        disabled={isMasterDisabled} />
                                 </div>
                             </th>
                         </template>
@@ -80,25 +81,28 @@
                     <c-duplicate-field-comparison-table
                         members={parsedMembers}
                         field-override-map={fieldOverrideMap}
+                        is-merged={isMerged}
+                        is-read-only={isReadOnly}
+                        master-record-id={selectedMasterId}
                         onfieldoverride={handleFieldOverride}
                     ></c-duplicate-field-comparison-table>
                 </div>
             </div>
 
             <!-- Merge Actions -->
-            <div class="slds-card slds-var-m-bottom_small">
-                <div class="slds-card__body slds-card__body_inner">
-                    <c-duplicate-merge-actions
-                        cluster-id={clusterId}
-                        master-id={selectedMasterId}
-                        field-override-map={fieldOverrideMap}
-                        onmergedone={handleMergeDone}
-                    ></c-duplicate-merge-actions>
+            <template if:true={isMergeAllowed}>
+                <div class="slds-card slds-var-m-bottom_small">
+                    <div class="slds-card__body slds-card__body_inner">
+                        <c-duplicate-merge-actions
+                            cluster-id={clusterId}
+                            master-id={selectedMasterId}
+                            field-override-map={resolvedFieldOverrides}
+                            onmergedone={handleMergeDone}
+                        ></c-duplicate-merge-actions>
+                    </div>
                 </div>
-            </div>
+            </template>
 
-            <!-- Merge Progress -->
-            <c-duplicate-merge-progress step={mergeStep}></c-duplicate-merge-progress>
         </template>
     </template>
     <template if:false={hasClusterId}>

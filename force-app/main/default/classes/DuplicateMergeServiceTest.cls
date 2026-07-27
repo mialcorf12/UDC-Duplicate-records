@@ -203,7 +203,7 @@ private class DuplicateMergeServiceTest {
 
         Test.startTest();
         Map<String, Object> result = DuplicateMergeService.initiateCrossObjectMerge(
-            cluster.Id, lead.Id, contact.Id, null
+            cluster.Id, new List<Id>{ lead.Id }, contact.Id, null
         );
         Test.stopTest();
 

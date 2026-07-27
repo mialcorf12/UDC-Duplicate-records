@@ -1,13 +1,12 @@
 import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 
-// Fields to display in the comparison grid (in order)
-const COMPARISON_FIELDS = [
-    { fieldName: 'FirstName', fieldLabel: 'FirstName' },
-    { fieldName: 'LastName', fieldLabel: 'LastName' },
-    { fieldName: 'Email', fieldLabel: 'Email' },
-    { fieldName: 'Phone', fieldLabel: 'Phone' },
-    { fieldName: 'Company', fieldLabel: 'Company' }
+const BASE_FIELDS = [
+    { fieldName: 'FirstName', fieldLabel: 'First Name' },
+    { fieldName: 'LastName',  fieldLabel: 'Last Name' },
+    { fieldName: 'Email',     fieldLabel: 'Email' },
+    { fieldName: 'Phone',     fieldLabel: 'Phone' },
+    { fieldName: 'AccountId', fieldLabel: 'Company', displayFieldName: 'Company' }
 ];
 
 const OBJECT_TYPE_BADGE = {
@@ -20,6 +19,9 @@ export default class DuplicateFieldComparisonTable extends NavigationMixin(Light
     _parsedMembers = [];
 
     @api fieldOverrideMap = {};
+    @api isMerged = false;
+    @api isReadOnly = false;
+    @api masterRecordId;
 
     @api
     get members() {
@@ -62,17 +64,30 @@ export default class DuplicateFieldComparisonTable extends NavigationMixin(Light
         }));
     }
 
+    get comparisonFields() {
+        const types = new Set(this._parsedMembers.map((m) => m.objectType));
+        const fields = [...BASE_FIELDS];
+        /*if (types.has('Lead') || types.has('Contact')) {
+            fields.push({ fieldName: 'Company', fieldLabel: 'Company' });
+        }
+        if (types.has('Lead') || types.has('Contact')) {
+            fields.push({ fieldName: 'Company', fieldLabel: 'Company' });
+        }*/
+        return fields;
+    }
+
     get fieldRows() {
-        return COMPARISON_FIELDS.map((f) => {
+        return this.comparisonFields.map((f) => {
             const selectedRecordId = this.fieldOverrideMap
                 ? this.fieldOverrideMap[f.fieldName]
                 : null;
             const values = this._parsedMembers.map((m) => ({
                 recordId: m.recordId,
-                value: m.snapshot[f.fieldName] || '',
+                value: m.snapshot[f.displayFieldName || f.fieldName] || '',
                 objectType: m.objectType,
                 inputId: `${f.fieldName}-${m.recordId}`,
-                isSelected: selectedRecordId === m.recordId
+                isSelected: selectedRecordId === m.recordId,
+                isMaster: m.recordId === this.masterRecordId
             }));
 
             return {
