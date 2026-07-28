@@ -3,6 +3,10 @@ import { refreshApex } from '@salesforce/apex';
 import getClusterDetail from '@salesforce/apex/DuplicateClusterController.getClusterDetail';
 import setMasterRecord from '@salesforce/apex/DuplicateClusterController.setMasterRecord';
 
+// Canonical comparison-table key for the block-level, object-type-aware
+// Address field. Mirrors DuplicateComparisonFields.ADDRESS_KEY on the Apex side.
+const ADDRESS_FIELD_KEY = 'Address';
+
 export default class DuplicateClusterDetail extends LightningElement {
     @track fieldOverrideMap = {};
     @track selectedMasterId = null;
@@ -152,6 +156,15 @@ export default class DuplicateClusterDetail extends LightningElement {
     get resolvedFieldOverrides() {
         const result = {};
         for (const [fieldName, winningRecordId] of Object.entries(this.fieldOverrideMap || {})) {
+            // Address is a compound, object-type-aware field: the snapshot only
+            // holds a formatted display string, which is lossy for merge. Pass
+            // the winning record Id through as-is so the merge service can
+            // re-read the live compound subfields off the correct source record.
+            if (fieldName === ADDRESS_FIELD_KEY) {
+                result[fieldName] = winningRecordId;
+                continue;
+            }
+
             const member = this.rawMembers.find(
                 (m) => (m.RecordId__c || m.Id) === winningRecordId
             );
