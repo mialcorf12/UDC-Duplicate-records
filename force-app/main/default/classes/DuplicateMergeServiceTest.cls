@@ -374,4 +374,121 @@ private class DuplicateMergeServiceTest {
             'Master MailingCity must remain untouched when Address is not overridden');
         System.assertEquals('KeptFirst', masterAfter.FirstName, 'Non-address override should still apply');
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Block-level Address merge (Lead-Lead) — symmetry with the Contact-Contact
+    // coverage above, exercising applyLeadOverrides' Address branch directly.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void testMergeSameObject_addressOverride_leadLeadMerge_appliesWinningAddress() {
+        Lead master = new Lead(
+            FirstName = 'LAddr', LastName = 'Master', Company = 'Acme', Email = 'laddr.master@test.com',
+            Street = '1 Old Rd', City = 'OldTown', State = 'OS', PostalCode = '00000', Country = 'US'
+        );
+        Lead winner = new Lead(
+            FirstName = 'LAddr', LastName = 'Winner', Company = 'Acme', Email = 'laddr.master@test.com',
+            Street = '2 New Blvd', City = 'NewTown', State = 'NS', PostalCode = '22222', Country = 'US'
+        );
+        insert new List<Lead>{ master, winner };
+
+        DuplicateCluster__c cluster = createLeadCluster(new List<Lead>{ master, winner });
+        Map<String, String> overrides = new Map<String, String>{
+            DuplicateComparisonFields.ADDRESS_KEY => String.valueOf(winner.Id)
+        };
+
+        Test.startTest();
+        Map<String, Object> result = DuplicateMergeService.mergeSameObject(
+            cluster.Id, master.Id, overrides
+        );
+        Test.stopTest();
+
+        System.assertEquals(true, result.get('success'), 'Lead-Lead address merge should succeed: ' + result.get('message'));
+
+        Lead masterAfter = [SELECT Street, City, State, PostalCode, Country FROM Lead WHERE Id = :master.Id];
+        System.assertEquals('2 New Blvd', masterAfter.Street, 'Master should adopt winning Street');
+        System.assertEquals('NewTown', masterAfter.City, 'Master should adopt winning City');
+        System.assertEquals('NS', masterAfter.State, 'Master should adopt winning State');
+        System.assertEquals('22222', masterAfter.PostalCode, 'Master should adopt winning PostalCode');
+        System.assertEquals('US', masterAfter.Country, 'Master should adopt winning Country');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Contact.Portal_User_ID__c uniqueness safety (spec requirement)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void testMergeSameObject_portalUserIdOverride_nullValue_savesSuccessfully() {
+        Account acc = new Account(Name = 'Portal Null Co');
+        insert acc;
+
+        Contact master = new Contact(
+            FirstName = 'Portal', LastName = 'NullMaster', Email = 'portal.null@test.com',
+            AccountId = acc.Id, Portal_User_ID__c = null
+        );
+        Contact secondary = new Contact(
+            FirstName = 'Portal', LastName = 'NullSecondary', Email = 'portal.null@test.com',
+            AccountId = acc.Id, Portal_User_ID__c = null
+        );
+        insert new List<Contact>{ master, secondary };
+
+        DuplicateCluster__c cluster = createContactCluster(new List<Contact>{ master, secondary });
+        // Explicit null override — Salesforce allows multiple nulls on a unique field.
+        Map<String, String> overrides = new Map<String, String>{ 'Portal_User_ID__c' => null };
+
+        Test.startTest();
+        Map<String, Object> result = DuplicateMergeService.mergeSameObject(
+            cluster.Id, master.Id, overrides
+        );
+        Test.stopTest();
+
+        System.assertEquals(true, result.get('success'), 'Null Portal_User_ID__c override should save without error: ' + result.get('message'));
+
+        Contact masterAfter = [SELECT Portal_User_ID__c FROM Contact WHERE Id = :master.Id];
+        System.assertEquals(null, masterAfter.Portal_User_ID__c, 'Master Portal_User_ID__c should remain null');
+    }
+
+    @isTest
+    static void testMergeSameObject_portalUserIdOverride_conflictingNonNull_surfacesDmlError() {
+        Account acc = new Account(Name = 'Portal Conflict Co');
+        insert acc;
+
+        // Unrelated existing Contact already holding the value the override will try to reuse.
+        Contact holder = new Contact(
+            FirstName = 'Portal', LastName = 'Holder', Email = 'portal.holder@test.com',
+            AccountId = acc.Id, Portal_User_ID__c = 'CONFLICT01'
+        );
+        insert holder;
+
+        Contact master = new Contact(
+            FirstName = 'Portal', LastName = 'ConflictMaster', Email = 'portal.conflict@test.com',
+            AccountId = acc.Id, Portal_User_ID__c = null
+        );
+        Contact secondary = new Contact(
+            FirstName = 'Portal', LastName = 'ConflictSecondary', Email = 'portal.conflict@test.com',
+            AccountId = acc.Id, Portal_User_ID__c = null
+        );
+        insert new List<Contact>{ master, secondary };
+
+        DuplicateCluster__c cluster = createContactCluster(new List<Contact>{ master, secondary });
+        Map<String, String> overrides = new Map<String, String>{ 'Portal_User_ID__c' => 'CONFLICT01' };
+
+        Test.startTest();
+        Map<String, Object> result = DuplicateMergeService.mergeSameObject(
+            cluster.Id, master.Id, overrides
+        );
+        Test.stopTest();
+
+        System.assertEquals(false, result.get('success'), 'Merge must fail, not silently succeed, on a unique-field conflict');
+        System.assertNotEquals(null, result.get('message'), 'Error message should be populated');
+
+        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
+        System.assertEquals(1, audits.size(), 'Audit record should be created');
+        System.assertEquals('Failed', audits[0].Status__c, 'Audit status should be Failed on a DML conflict, not swallowed');
+        System.assertNotEquals(null, audits[0].ErrorMessage__c, 'Audit ErrorMessage__c must capture the DML failure');
+
+        // Master must not have been left in a merged/deleted state by a failed transaction.
+        Contact masterAfter = [SELECT Id, Portal_User_ID__c FROM Contact WHERE Id = :master.Id];
+        System.assertNotEquals('CONFLICT01', masterAfter.Portal_User_ID__c, 'Master must not carry the conflicting value after a failed merge');
+    }
 }
