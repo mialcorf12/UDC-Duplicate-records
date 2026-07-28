@@ -158,4 +158,101 @@ private class ContactSelectorTest {
 
         System.assertEquals(200, result.size(), 'Should return all 200 contacts by ID');
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Shared field-list constant — new comparison fields must be queryable
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void testGetByEmailBlock_returnsNewComparisonAndAddressFields() {
+        List<Contact> seed = [SELECT Id FROM Contact WHERE Email = 'testcontact0@example.com' LIMIT 1];
+        updateBypassingDuplicateRules(new Contact(
+            Id                                 = seed[0].Id,
+            MobilePhone                        = '5559999999',
+            Sales_Informed_Agreement_Signed__c = Date.today(),
+            Email_Collection__c                = 'opted-in',
+            Portal_User_ID__c                  = 'PORTAL-1',
+            MailingStreet                      = '1 Main St',
+            MailingCity                        = 'Springfield'
+        ));
+
+        Set<String> blockKeys = new Set<String>{ 'testcontact0@example.com' };
+
+        Test.startTest();
+        List<Contact> result = ContactSelector.getByEmailBlock(blockKeys);
+        Test.stopTest();
+
+        System.assertEquals(1, result.size(), 'Expected 1 contact matching the email block');
+        Contact c = result[0];
+        System.assertEquals('5559999999', c.MobilePhone, 'MobilePhone should be selected');
+        System.assertEquals(Date.today(), c.Sales_Informed_Agreement_Signed__c, 'Sales_Informed_Agreement_Signed__c should be selected');
+        System.assertEquals('opted-in', c.Email_Collection__c, 'Email_Collection__c should be selected');
+        System.assertEquals('PORTAL-1', c.Portal_User_ID__c, 'Portal_User_ID__c should be selected');
+        System.assertEquals('1 Main St', c.MailingStreet, 'MailingStreet should be selected');
+        System.assertEquals('Springfield', c.MailingCity, 'MailingCity should be selected');
+    }
+
+    @isTest
+    static void testGetByIds_returnsNewComparisonAndAddressFields() {
+        List<Contact> seed = [SELECT Id FROM Contact LIMIT 1];
+        updateBypassingDuplicateRules(new Contact(
+            Id                   = seed[0].Id,
+            MobilePhone          = '5558888888',
+            Portal_User_ID__c    = 'PORTAL-2',
+            MailingStreet        = '2 Elm St',
+            MailingPostalCode    = '00001'
+        ));
+
+        Test.startTest();
+        List<Contact> result = ContactSelector.getByIds(new Set<Id>{ seed[0].Id });
+        Test.stopTest();
+
+        System.assertEquals(1, result.size(), 'Should return the requested contact');
+        Contact c = result[0];
+        System.assertEquals('5558888888', c.MobilePhone, 'MobilePhone should be selected by getByIds');
+        System.assertEquals('PORTAL-2', c.Portal_User_ID__c, 'Portal_User_ID__c should be selected by getByIds');
+        System.assertEquals('2 Elm St', c.MailingStreet, 'MailingStreet should be selected by getByIds');
+        System.assertEquals('00001', c.MailingPostalCode, 'MailingPostalCode should be selected by getByIds');
+    }
+
+    @isTest
+    static void testGetByEmailBlock_bulk200NoSoqlInLoop() {
+        // Bulkification guard: a single selector call servicing 200 records must
+        // consume exactly one SOQL query, regardless of how many block keys are passed.
+        // Both Limits.getQueries() reads must stay inside the same Test.startTest()/
+        // stopTest() context — code after stopTest() reverts to the outer transaction's
+        // governor limit counters, which would make a before/after-boundary read invalid.
+        Set<String> allBlocks = new Set<String>();
+        for (Integer i = 0; i < 200; i++) {
+            allBlocks.add('testcontact' + i + '@example.com');
+        }
+
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        List<Contact> result = ContactSelector.getByEmailBlock(allBlocks);
+        Integer queriesUsed = Limits.getQueries() - queriesBefore;
+        Test.stopTest();
+
+        System.assertEquals(200, result.size(), 'Should return all 200 contacts');
+        System.assertEquals(1, queriesUsed, 'getByEmailBlock must execute exactly one SOQL query for the whole bulk set');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * @description Updates a Contact while bypassing standard duplicate-rule
+     *              blocking, so seeding comparison-field values on records that
+     *              already share blocking-key data (by test design) does not fail
+     *              the update itself.
+     * @param contactUpdate Contact record with Id and the fields to update.
+     */
+    private static void updateBypassingDuplicateRules(Contact contactUpdate) {
+        Database.DMLOptions dmlOptions = new Database.DMLOptions();
+        dmlOptions.duplicateRuleHeader.allowSave = true;
+        Database.SaveResult result = Database.update(contactUpdate, dmlOptions);
+        System.assert(result.isSuccess(), 'Contact update should succeed: ' +
+            (result.getErrors().isEmpty() ? '' : result.getErrors()[0].getMessage()));
+    }
 }

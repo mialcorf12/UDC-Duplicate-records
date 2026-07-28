@@ -25,22 +25,15 @@ public without sharing class DuplicateDetectionBatch implements Database.Batchab
     /**
      * @description Defines the scope of records to process.
      *              Returns all non-deleted Contacts that have an email block.
+     * @param bc Batch context.
+     * @return QueryLocator for non-deleted Contacts with a populated email block.
      */
     public Database.QueryLocator start(Database.BatchableContext bc) {
-        return Database.getQueryLocator([
-            SELECT Id,
-                   Email,
-                   Phone,
-                   FirstName,
-                   LastName,
-                   Account.Name,
-                   Email_Block__c,
-                   Phone_Block__c,
-                   Name_Block__c
-            FROM   Contact
-            WHERE  IsDeleted = false
-            AND    Email_Block__c != null
-        ]);
+        List<String> fields = new List<String>(DuplicateComparisonFields.CONTACT_SNAPSHOT_FIELDS);
+        fields.addAll(DuplicateComparisonFields.addressSubfields('Contact'));
+        String query = 'SELECT ' + String.join(fields, ', ') +
+            ' FROM Contact WHERE IsDeleted = false AND Email_Block__c != null';
+        return Database.getQueryLocator(query);
     }
 
     /**
