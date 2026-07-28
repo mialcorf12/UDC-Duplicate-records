@@ -50,6 +50,7 @@
 		<members>Contact.Email_Collection__c</members>
 		<members>Contact.Name_Block__c</members>
 		<members>Contact.Phone_Block__c</members>
+		<members>Contact.Portal_User_ID__c</members>
 		<members>Contact.Sales_Informed_Agreement_Signed__c</members>
 		<members>DuplicateClusterMember__c.Cluster__c</members>
 		<members>DuplicateClusterMember__c.FieldSnapshotJSON__c</members>
