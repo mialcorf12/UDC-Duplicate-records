@@ -183,24 +183,31 @@ public with sharing class DuplicateScoringUtil {
     }
 
     /**
-     * @description Builds a minimal JSON snapshot of the record's key fields.
-     *              Only includes: Email, Phone, FirstName, LastName, Company.
-     *              Lead uses Company directly; Contact uses Account.Name as "Company".
+     * @description Builds a JSON snapshot of the record's comparison-table fields:
+     *              identity/contact fields (Email, Phone, MobilePhone, FirstName,
+     *              LastName, Company, AccountId), the same-name scalar fields
+     *              (Sales_Informed_Agreement_Signed__c, Email_Collection__c,
+     *              Portal_User_ID__c), and the block-level Address compound field
+     *              (canonical subfield keys, e.g. "AddressStreet", plus a single
+     *              pre-formatted "Address" display string). Lead uses Company
+     *              directly; Contact uses Account.Name as "Company". All values
+     *              are null-safe; missing/blank values are stored as empty string.
      *
      * @param record      The SObject record (Contact or Lead).
      * @param objectType  'Contact' or 'Lead'.
-     * @return JSON string: {"Email":"...","Phone":"...","FirstName":"...","LastName":"...","Company":"..."}
+     * @return JSON string containing the snapshot fields described above.
      */
     public static String buildSnapshotJSON(SObject record, String objectType) {
         Map<String, Object> snapshot = new Map<String, Object>();
 
-        String email     = (String) record.get('Email');
-        String phone     = (String) record.get('Phone');
-        String firstName = (String) record.get('FirstName');
-        String lastName  = (String) record.get('LastName');
-        String company   = '';
+        String email       = (String) record.get('Email');
+        String phone       = (String) record.get('Phone');
+        String mobilePhone = (String) record.get('MobilePhone');
+        String firstName   = (String) record.get('FirstName');
+        String lastName    = (String) record.get('LastName');
+        String company     = '';
+        String accountId   = '';
 
-        String accountId = '';
         if (objectType == 'Lead') {
             company = (String) record.get('Company');
         } else {
@@ -212,12 +219,22 @@ public with sharing class DuplicateScoringUtil {
             accountId = (String) record.get('AccountId');
         }
 
-        snapshot.put('Email',     email     != null ? email     : '');
-        snapshot.put('Phone',     phone     != null ? phone     : '');
-        snapshot.put('FirstName', firstName != null ? firstName : '');
-        snapshot.put('LastName',  lastName  != null ? lastName  : '');
-        snapshot.put('Company',   company   != null ? company   : '');
-        snapshot.put('AccountId', accountId != null ? accountId : '');
+        Date agreementSignedDate = (Date) record.get('Sales_Informed_Agreement_Signed__c');
+        Object emailCollection   = record.get('Email_Collection__c');
+        Object portalUserId      = record.get('Portal_User_ID__c');
+
+        snapshot.put('Email',       nullSafeString(email));
+        snapshot.put('Phone',       nullSafeString(phone));
+        snapshot.put('MobilePhone', nullSafeString(mobilePhone));
+        snapshot.put('FirstName',   nullSafeString(firstName));
+        snapshot.put('LastName',    nullSafeString(lastName));
+        snapshot.put('Company',     nullSafeString(company));
+        snapshot.put('AccountId',   nullSafeString(accountId));
+        snapshot.put('Sales_Informed_Agreement_Signed__c', nullSafeString(agreementSignedDate));
+        snapshot.put('Email_Collection__c', nullSafeString(emailCollection));
+        snapshot.put('Portal_User_ID__c',   nullSafeString(portalUserId));
+
+        putAddressSnapshot(snapshot, record, objectType);
 
         return JSON.serialize(snapshot);
     }
@@ -225,6 +242,64 @@ public with sharing class DuplicateScoringUtil {
     // ─────────────────────────────────────────────────────────────────────────
     // Private helpers
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * @description Converts any value to its String representation, defaulting
+     *              to empty string when the value is null. Used to keep
+     *              snapshot-building free of repeated null-check branches.
+     * @param value Any value (String, Date, etc.), or null.
+     * @return String.valueOf(value), or '' when value is null.
+     */
+    private static String nullSafeString(Object value) {
+        return value != null ? String.valueOf(value) : '';
+    }
+
+    /**
+     * @description Overload for Date values so the ISO date format
+     *              (e.g. "2026-01-15") is preserved instead of the generic
+     *              Object.toString() representation.
+     * @param value A Date value, or null.
+     * @return String.valueOf(value), or '' when value is null.
+     */
+    private static String nullSafeString(Date value) {
+        return value != null ? String.valueOf(value) : '';
+    }
+
+    /**
+     * @description Populates the snapshot map with the block-level Address field:
+     *              one canonical subfield key per compound subfield (e.g.
+     *              "AddressStreet", "AddressCity") regardless of source object
+     *              type, PLUS a single pre-formatted "Address" display string
+     *              joining the populated Street/City/State/PostalCode/Country
+     *              parts. Canonical keys let downstream consumers (the comparison
+     *              table LWC, and the future object-type-aware merge helper) read
+     *              the address without branching on source object type. Values
+     *              are null-safe; the merge write path still re-reads the live
+     *              winning record rather than trusting this point-in-time
+     *              snapshot.
+     * @param snapshot   The mutable snapshot map being built by buildSnapshotJSON.
+     * @param record     The SObject record (Contact or Lead).
+     * @param objectType 'Contact' or 'Lead'.
+     */
+    private static void putAddressSnapshot(Map<String, Object> snapshot, SObject record, String objectType) {
+        List<String> sourceSubfields = DuplicateComparisonFields.addressSubfields(objectType);
+        List<String> canonicalSuffixes = new List<String>{
+            'Street', 'City', 'State', 'PostalCode', 'Country', 'Latitude', 'Longitude', 'GeocodeAccuracy'
+        };
+        // Only the human-readable line parts (Street..Country) feed the display string.
+        Integer displaySubfieldCount = 5;
+
+        List<String> displayParts = new List<String>();
+        for (Integer i = 0; i < sourceSubfields.size(); i++) {
+            String stringValue = nullSafeString(record.get(sourceSubfields[i]));
+            snapshot.put(DuplicateComparisonFields.ADDRESS_KEY + canonicalSuffixes[i], stringValue);
+
+            if (i < displaySubfieldCount && String.isNotBlank(stringValue)) {
+                displayParts.add(stringValue);
+            }
+        }
+        snapshot.put(DuplicateComparisonFields.ADDRESS_KEY, String.join(displayParts, ', '));
+    }
 
     private static String buildFullName(SObject record) {
         String firstName = (String) record.get('FirstName');
