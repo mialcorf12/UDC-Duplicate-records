@@ -287,4 +287,91 @@ private class DuplicateMergeServiceTest {
 
         System.assertEquals(true, result.get('success'), '3-contact merge should succeed: ' + result.get('message'));
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Block-level Address merge (Contact-Contact)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void testMergeSameObject_addressOverride_contactContactMerge_appliesWinningMailingAddress() {
+        Account acc = new Account(Name = 'Addr Merge Co');
+        insert acc;
+
+        Contact master = new Contact(
+            FirstName = 'Addr', LastName = 'Master', Email = 'addr.master@test.com',
+            AccountId = acc.Id,
+            MailingStreet = '1 Old St', MailingCity = 'OldCity', MailingState = 'OS',
+            MailingPostalCode = '00000', MailingCountry = 'US'
+        );
+        Contact winner = new Contact(
+            FirstName = 'Addr', LastName = 'Winner', Email = 'addr.master@test.com',
+            AccountId = acc.Id,
+            MailingStreet = '2 New Ave', MailingCity = 'NewCity', MailingState = 'NS',
+            MailingPostalCode = '11111', MailingCountry = 'US'
+        );
+        insert new List<Contact>{ master, winner };
+
+        DuplicateCluster__c cluster = createContactCluster(new List<Contact>{ master, winner });
+        Map<String, String> overrides = new Map<String, String>{
+            DuplicateComparisonFields.ADDRESS_KEY => String.valueOf(winner.Id)
+        };
+
+        Test.startTest();
+        Map<String, Object> result = DuplicateMergeService.mergeSameObject(
+            cluster.Id, master.Id, overrides
+        );
+        Test.stopTest();
+
+        System.assertEquals(true, result.get('success'), 'Address merge should succeed: ' + result.get('message'));
+
+        Contact masterAfter = [
+            SELECT MailingStreet, MailingCity, MailingState, MailingPostalCode, MailingCountry
+            FROM   Contact
+            WHERE  Id = :master.Id
+        ];
+        System.assertEquals('2 New Ave', masterAfter.MailingStreet, 'Master should adopt winning MailingStreet');
+        System.assertEquals('NewCity', masterAfter.MailingCity, 'Master should adopt winning MailingCity');
+        System.assertEquals('NS', masterAfter.MailingState, 'Master should adopt winning MailingState');
+        System.assertEquals('11111', masterAfter.MailingPostalCode, 'Master should adopt winning MailingPostalCode');
+        System.assertEquals('US', masterAfter.MailingCountry, 'Master should adopt winning MailingCountry');
+    }
+
+    @isTest
+    static void testMergeSameObject_addressNotOverridden_masterAddressUnchanged() {
+        Account acc = new Account(Name = 'Addr Keep Co');
+        insert acc;
+
+        Contact master = new Contact(
+            FirstName = 'Keep', LastName = 'Master', Email = 'keep.master@test.com',
+            AccountId = acc.Id,
+            MailingStreet = 'Original St', MailingCity = 'OriginalCity',
+            MailingState = 'OS', MailingCountry = 'US'
+        );
+        Contact secondary = new Contact(
+            FirstName = 'Keep', LastName = 'Secondary', Email = 'keep.master@test.com',
+            AccountId = acc.Id,
+            MailingStreet = 'Other St', MailingCity = 'OtherCity',
+            MailingState = 'OS', MailingCountry = 'US'
+        );
+        insert new List<Contact>{ master, secondary };
+
+        DuplicateCluster__c cluster = createContactCluster(new List<Contact>{ master, secondary });
+        // No 'Address' key present — only a scalar override for FirstName.
+        Map<String, String> overrides = new Map<String, String>{ 'FirstName' => 'KeptFirst' };
+
+        Test.startTest();
+        Map<String, Object> result = DuplicateMergeService.mergeSameObject(
+            cluster.Id, master.Id, overrides
+        );
+        Test.stopTest();
+
+        System.assertEquals(true, result.get('success'), 'Merge should succeed: ' + result.get('message'));
+
+        Contact masterAfter = [SELECT MailingStreet, MailingCity, FirstName FROM Contact WHERE Id = :master.Id];
+        System.assertEquals('Original St', masterAfter.MailingStreet,
+            'Master MailingStreet must remain untouched when Address is not overridden');
+        System.assertEquals('OriginalCity', masterAfter.MailingCity,
+            'Master MailingCity must remain untouched when Address is not overridden');
+        System.assertEquals('KeptFirst', masterAfter.FirstName, 'Non-address override should still apply');
+    }
 }
