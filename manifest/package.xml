@@ -47,8 +47,10 @@
 	<types>
 		<members>Contact.Company_Block__c</members>
 		<members>Contact.Email_Block__c</members>
+		<members>Contact.Email_Collection__c</members>
 		<members>Contact.Name_Block__c</members>
 		<members>Contact.Phone_Block__c</members>
+		<members>Contact.Sales_Informed_Agreement_Signed__c</members>
 		<members>DuplicateClusterMember__c.Cluster__c</members>
 		<members>DuplicateClusterMember__c.FieldSnapshotJSON__c</members>
 		<members>DuplicateClusterMember__c.IsMaster__c</members>
@@ -81,8 +83,11 @@
 		<members>DuplicateSettings__mdt.ScoreThreshold__c</members>
 		<members>Lead.Company_Block__c</members>
 		<members>Lead.Email_Block__c</members>
+		<members>Lead.Email_Collection__c</members>
 		<members>Lead.Name_Block__c</members>
 		<members>Lead.Phone_Block__c</members>
+		<members>Lead.Portal_User_ID__c</members>
+		<members>Lead.Sales_Informed_Agreement_Signed__c</members>
 		<name>CustomField</name>
 	</types>
 	<types>
@@ -106,6 +111,16 @@
 	<types>
 		<members>Duplicate_Management_Console</members>
 		<name>FlexiPage</name>
+	</types>
+	<types>
+		<members>Email_Collection_Contact</members>
+		<members>Email_Collection_Lead</members>
+		<name>Flow</name>
+	</types>
+	<types>
+		<members>Email_Collection_Contact</members>
+		<members>Email_Collection_Lead</members>
+		<name>FlowDefinition</name>
 	</types>
 	<types>
 		<members>duplicateClusterDetail</members>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <assignments>
+        <name>Set_Email_Collection</name>
+        <label>Set Email Collection</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Email_Collection__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>fx_NewEmailCollection</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <environments>Default</environments>
+    <formulas>
+        <name>fx_NewEmailCollection</name>
+        <dataType>String</dataType>
+        <expression>IF(
+  /* Si el campo de colección está vacío, inicializarlo */
+  ISBLANK({!$Record.Email_collection__c}),
+  
+  /* Concatenar todos los correos actuales no vacíos al crear */
+  TRIM(
+    IF(ISBLANK({!$Record.Email}), &quot;&quot;, {!$Record.Email} &amp; &quot;; &quot;) &amp;
+    IF(ISBLANK({!$Record.ASD_Email__c}), &quot;&quot;, {!$Record.ASD_Email__c} &amp; &quot;; &quot;) &amp;
+    IF(ISBLANK({!$Record.Previous_Email__c}), &quot;&quot;, {!$Record.Previous_Email__c} &amp; &quot;; &quot;) &amp;
+    IF(ISBLANK({!$Record.Company_Email__c}), &quot;&quot;, {!$Record.Company_Email__c} &amp; &quot;; &quot;) &amp;
+    IF(ISBLANK({!$Record.Portal_Email_Address__c}), &quot;&quot;, {!$Record.Portal_Email_Address__c} &amp; &quot;; &quot;)
+  ),
+
+  /* Si ya tiene datos, agregar solo los campos que cambiaron y que no están vacíos ni duplicados */
+  {!$Record.Email_collection__c} &amp;
+  IF(
+    AND(
+      ISCHANGED({!$Record.Email}),
+      NOT(ISBLANK({!$Record.Email})),
+      NOT(CONTAINS({!$Record.Email_collection__c}, {!$Record.Email}))
+    ),
+    &quot;; &quot; &amp; {!$Record.Email},
+    &quot;&quot;
+  ) &amp;
+  IF(
+    AND(
+      ISCHANGED({!$Record.ASD_Email__c}),
+      NOT(ISBLANK({!$Record.ASD_Email__c})),
+      NOT(CONTAINS({!$Record.Email_collection__c}, {!$Record.ASD_Email__c}))
+    ),
+    &quot;; &quot; &amp; {!$Record.ASD_Email__c},
+    &quot;&quot;
+  ) &amp;
+  IF(
+    AND(
+      ISCHANGED({!$Record.Previous_Email__c}),
+      NOT(ISBLANK({!$Record.Previous_Email__c})),
+      NOT(CONTAINS({!$Record.Email_collection__c}, {!$Record.Previous_Email__c}))
+    ),
+    &quot;; &quot; &amp; {!$Record.Previous_Email__c},
+    &quot;&quot;
+  ) &amp;
+  IF(
+    AND(
+      ISCHANGED({!$Record.Company_Email__c}),
+      NOT(ISBLANK({!$Record.Company_Email__c})),
+      NOT(CONTAINS({!$Record.Email_collection__c}, {!$Record.Company_Email__c}))
+    ),
+    &quot;; &quot; &amp; {!$Record.Company_Email__c},
+    &quot;&quot;
+  ) &amp;
+  IF(
+    AND(
+      ISCHANGED({!$Record.Portal_Email_Address__c}),
+      NOT(ISBLANK({!$Record.Portal_Email_Address__c})),
+      NOT(CONTAINS({!$Record.Email_collection__c}, {!$Record.Portal_Email_Address__c}))
+    ),
+    &quot;; &quot; &amp; {!$Record.Portal_Email_Address__c},
+    &quot;&quot;
+  )
+)</expression>
+    </formulas>
+    <interviewLabel>Email Collection Contact {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Email Collection Contact</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Set_Email_Collection</targetReference>
+        </connector>
+        <filterFormula>OR(
+  ISCHANGED({!$Record.Email}),
+  ISCHANGED({!$Record.ASD_Email__c}),
+  ISCHANGED({!$Record.Previous_Email__c}),
+  ISCHANGED({!$Record.Company_Email__c}),
+  ISCHANGED({!$Record.Portal_Email_Address__c}),
+  AND(
+    ISNEW(),
+    OR(
+      NOT(ISBLANK({!$Record.Email})),
+      NOT(ISBLANK({!$Record.ASD_Email__c})),
+      NOT(ISBLANK({!$Record.Previous_Email__c})),
+      NOT(ISBLANK({!$Record.Company_Email__c})),
+      NOT(ISBLANK({!$Record.Portal_Email_Address__c}))
+    )
+  )
+)</filterFormula>
+        <object>Contact</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>
