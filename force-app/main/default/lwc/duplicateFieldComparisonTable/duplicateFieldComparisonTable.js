@@ -2,20 +2,20 @@ import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 
 const BASE_FIELDS = [
-    { fieldName: 'FirstName', fieldLabel: 'First Name' },
-    { fieldName: 'LastName',  fieldLabel: 'Last Name' },
-    { fieldName: 'Email',     fieldLabel: 'Email' },
-    { fieldName: 'Phone',     fieldLabel: 'Phone' },
-    { fieldName: 'MobilePhone', fieldLabel: 'Mobile Phone' },
-    { fieldName: 'AccountId', fieldLabel: 'Company', displayFieldName: 'Company' },
+    { fieldName: 'Portal_User_ID__c',   fieldLabel: 'Portal User ID' },
+    { fieldName: 'FirstName',           fieldLabel: 'First Name' },
+    { fieldName: 'LastName',            fieldLabel: 'Last Name' },
+    { fieldName: 'Email',               fieldLabel: 'Email' },
+    { fieldName: 'Phone',               fieldLabel: 'Phone' },
+    { fieldName: 'MobilePhone',         fieldLabel: 'Mobile Phone' },
+    { fieldName: 'AccountId',           fieldLabel: 'Company', displayFieldName: 'Company' },
     { fieldName: 'Sales_Informed_Agreement_Signed__c', fieldLabel: 'Date Account Agreement Signed' },
     { fieldName: 'Email_Collection__c', fieldLabel: 'Email Collection' },
-    { fieldName: 'Portal_User_ID__c', fieldLabel: 'Portal User ID' },
     // Address is a single block-level row: one radio per record selects the
     // entire compound address, not per-subfield rows. The row displays the
     // pre-formatted "Address" string from the snapshot; the merge write itself
     // (object-type-aware subfield mapping) is handled server-side.
-    { fieldName: 'Address', fieldLabel: 'Address' }
+    { fieldName: 'Address',             fieldLabel: 'Address' }
 ];
 
 const OBJECT_TYPE_BADGE = {
