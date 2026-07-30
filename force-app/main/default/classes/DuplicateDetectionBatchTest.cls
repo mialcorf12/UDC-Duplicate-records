@@ -90,19 +90,31 @@ private class DuplicateDetectionBatchTest {
 
         System.assert(members.size() > 0, 'Expected cluster members to be created');
 
+        // Snapshot key count: 10 scalar keys (Email, Phone, MobilePhone, FirstName,
+        // LastName, Company, AccountId, Sales_Informed_Agreement_Signed__c,
+        // Email_Collection__c, Portal_User_ID__c) + 8 canonical Address subfield
+        // keys + 1 formatted "Address" display string = 19.
+        Integer expectedFieldCount = 19;
+
         // Verify each member has a valid JSON snapshot
         for (DuplicateClusterMember__c m : members) {
             System.assertNotEquals(null, m.FieldSnapshotJSON__c, 'FieldSnapshotJSON__c should not be null');
             System.assertNotEquals('', m.FieldSnapshotJSON__c, 'FieldSnapshotJSON__c should not be empty');
 
             Map<String, Object> snapshot = (Map<String, Object>) JSON.deserializeUntyped(m.FieldSnapshotJSON__c);
-            System.assertEquals(6, snapshot.size(), 'Snapshot must have exactly 6 fields');
-            System.assert(snapshot.containsKey('Email'),     'Snapshot must contain Email');
-            System.assert(snapshot.containsKey('Phone'),     'Snapshot must contain Phone');
-            System.assert(snapshot.containsKey('FirstName'), 'Snapshot must contain FirstName');
-            System.assert(snapshot.containsKey('LastName'),  'Snapshot must contain LastName');
-            System.assert(snapshot.containsKey('Company'),   'Snapshot must contain Company');
+            System.assertEquals(expectedFieldCount, snapshot.size(), 'Snapshot must have exactly ' + expectedFieldCount + ' fields');
+            System.assert(snapshot.containsKey('Email'),       'Snapshot must contain Email');
+            System.assert(snapshot.containsKey('Phone'),       'Snapshot must contain Phone');
+            System.assert(snapshot.containsKey('MobilePhone'), 'Snapshot must contain MobilePhone');
+            System.assert(snapshot.containsKey('FirstName'),   'Snapshot must contain FirstName');
+            System.assert(snapshot.containsKey('LastName'),    'Snapshot must contain LastName');
+            System.assert(snapshot.containsKey('Company'),     'Snapshot must contain Company');
             System.assert(snapshot.containsKey('AccountId'),   'Snapshot must contain AccountId');
+            System.assert(snapshot.containsKey('Sales_Informed_Agreement_Signed__c'), 'Snapshot must contain Sales_Informed_Agreement_Signed__c');
+            System.assert(snapshot.containsKey('Email_Collection__c'), 'Snapshot must contain Email_Collection__c');
+            System.assert(snapshot.containsKey('Portal_User_ID__c'),  'Snapshot must contain Portal_User_ID__c');
+            System.assert(snapshot.containsKey('Address'),     'Snapshot must contain the formatted Address display string');
+            System.assert(snapshot.containsKey('AddressStreet'), 'Snapshot must contain the canonical AddressStreet subfield key');
         }
     }
 
