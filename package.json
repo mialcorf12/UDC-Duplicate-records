@@ -1,0 +1,16 @@
+{
+  "name": "duplicate-records",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Salesforce DX project — duplicate detection and merge tooling",
+  "scripts": {
+    "test": "npm run test:unit",
+    "test:unit": "sfdx-lwc-jest",
+    "test:unit:watch": "sfdx-lwc-jest --watch",
+    "test:unit:debug": "sfdx-lwc-jest --debug",
+    "test:unit:coverage": "sfdx-lwc-jest --coverage"
+  },
+  "devDependencies": {
+    "@salesforce/sfdx-lwc-jest": "^7.9.0"
+  }
+}

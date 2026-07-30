@@ -173,7 +173,10 @@ private class ContactSelectorTest {
             Email_Collection__c                = 'opted-in',
             Portal_User_ID__c                  = 'PORTAL-1',
             MailingStreet                      = '1 Main St',
-            MailingCity                        = 'Springfield'
+            MailingCity                        = 'Springfield', 
+            MailingState                       = 'IL',
+            MailingPostalCode                  = '62701',
+            Mailingcountry                     = 'US'
         ));
 
         Set<String> blockKeys = new Set<String>{ 'testcontact0@example.com' };
@@ -200,7 +203,10 @@ private class ContactSelectorTest {
             MobilePhone          = '5558888888',
             Portal_User_ID__c    = 'PORTAL-2',
             MailingStreet        = '2 Elm St',
-            MailingPostalCode    = '00001'
+            MailingCity          = 'Springfield',
+            MailingState         = 'IL',
+            MailingPostalCode    = '62701',
+            Mailingcountry       = 'US'
         ));
 
         Test.startTest();
@@ -212,7 +218,7 @@ private class ContactSelectorTest {
         System.assertEquals('5558888888', c.MobilePhone, 'MobilePhone should be selected by getByIds');
         System.assertEquals('PORTAL-2', c.Portal_User_ID__c, 'Portal_User_ID__c should be selected by getByIds');
         System.assertEquals('2 Elm St', c.MailingStreet, 'MailingStreet should be selected by getByIds');
-        System.assertEquals('00001', c.MailingPostalCode, 'MailingPostalCode should be selected by getByIds');
+        System.assertEquals('62701', c.MailingPostalCode, 'MailingPostalCode should be selected by getByIds');
     }
 
     @isTest

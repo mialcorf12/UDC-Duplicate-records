@@ -56,6 +56,40 @@ public class DuplicateComparisonFields {
     };
 
     /**
+     * @description Returns the canonical Address block snapshot keys (e.g.
+     *              "AddressStreet", "AddressCity") used by DuplicateScoringUtil's
+     *              snapshot JSON and, in turn, by the comparison table's field
+     *              override map. These are snapshot-only keys, neither Contact
+     *              nor Lead expose a field with these exact API names, so merge
+     *              code must exclude them from any generic SObject.put() loop and
+     *              rely on mergeAddressField() to write the real Mailing/plain
+     *              address fields instead.
+     * @return Set of canonical Address snapshot keys (not including the plain
+     *         "Address" display key itself, callers combine both).
+     */
+    /**
+     * @description Snapshot keys whose real Apex field type is not String (e.g.
+     *              Sales_Informed_Agreement_Signed__c is a Date field on both
+     *              Contact and Lead). SObject.put(fieldName, stringValue) does not
+     *              coerce String into these types, so merge code must special-case
+     *              them instead of feeding the snapshot string straight into put().
+     */
+    public static final Set<String> DATE_SNAPSHOT_FIELDS = new Set<String>{
+        'Sales_Informed_Agreement_Signed__c'
+    };
+
+    public static Set<String> addressSnapshotKeys() {
+        List<String> suffixes = new List<String>{
+            'Street', 'City', 'State', 'PostalCode', 'Country', 'Latitude', 'Longitude', 'GeocodeAccuracy'
+        };
+        Set<String> keys = new Set<String>();
+        for (String suffix : suffixes) {
+            keys.add(ADDRESS_KEY + suffix);
+        }
+        return keys;
+    }
+
+    /**
      * @description Returns the compound address subfield API names for the given
      *              object type. Contact exposes the address as MailingAddress
      *              subfields; Lead exposes it as plain Address subfields. Callers

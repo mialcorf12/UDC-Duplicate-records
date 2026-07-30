@@ -7,6 +7,15 @@ import setMasterRecord from '@salesforce/apex/DuplicateClusterController.setMast
 // Address field. Mirrors DuplicateComparisonFields.ADDRESS_KEY on the Apex side.
 const ADDRESS_FIELD_KEY = 'Address';
 
+function buildOverridesForMember(member) {
+    const recordId = member?.RecordId__c || member?.Id;
+    let snapshot = {};
+    try { snapshot = JSON.parse(member?.FieldSnapshotJSON__c || '{}'); } catch (e) {}
+    const overrides = {};
+    Object.keys(snapshot).forEach((fieldName) => { overrides[fieldName] = recordId; });
+    return overrides;
+}
+
 export default class DuplicateClusterDetail extends LightningElement {
     @track fieldOverrideMap = {};
     @track selectedMasterId = null;
@@ -46,12 +55,7 @@ export default class DuplicateClusterDetail extends LightningElement {
             // Auto-select the first record for all fields when cluster is not Merged
             const clusterStatus = data.cluster?.Status__c;
             if (clusterStatus !== 'Merged' && clusterStatus !== 'Ignored' && members.length > 0) {
-                const firstId = members[0].RecordId__c || members[0].Id;
-                let firstSnapshot = {};
-                try { firstSnapshot = JSON.parse(members[0].FieldSnapshotJSON__c || '{}'); } catch (e) {}
-                const initialOverrides = {};
-                Object.keys(firstSnapshot).forEach((f) => { initialOverrides[f] = firstId; });
-                this.fieldOverrideMap = initialOverrides;
+                this.fieldOverrideMap = buildOverridesForMember(members[0]);
             }
         } else if (error) {
             this.errorMessage = error.body
@@ -139,6 +143,16 @@ export default class DuplicateClusterDetail extends LightningElement {
     handleMasterChange(event) {
         const newMasterId = event.target.value;
         this.selectedMasterId = newMasterId;
+
+        if (this.isMergeAllowed) {
+            const newMasterMember = this.rawMembers.find(
+                (m) => (m.RecordId__c || m.Id) === newMasterId
+            );
+            if (newMasterMember) {
+                this.fieldOverrideMap = buildOverridesForMember(newMasterMember);
+            }
+        }
+
         setMasterRecord({ clusterId: this._clusterId, memberRecordId: newMasterId })
             .catch(error => {
                 this.errorMessage = error.body ? error.body.message : 'Failed to update master record.';
