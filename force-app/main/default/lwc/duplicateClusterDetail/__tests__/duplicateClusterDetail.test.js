@@ -17,7 +17,7 @@ jest.mock(
 );
 jest.mock(
     '@salesforce/apex/DuplicateClusterController.setMasterRecord',
-    () => ({ default: jest.fn() }),
+    () => ({ default: jest.fn(() => Promise.resolve()) }),
     { virtual: true }
 );
 
@@ -154,5 +154,64 @@ describe('c-duplicate-cluster-detail — Address override resolution', () => {
             // resolve Address to a record Id, never undefined.
             expect(mergeActions.fieldOverrideMap.Address).toBe(MASTER_ID);
         });
+    });
+
+    it('auto-selects every field to the new master when the Master radio changes', () => {
+        const element = createDetail();
+        getClusterDetail.emit(CLUSTER_DATA);
+
+        return Promise.resolve()
+            .then(() => {
+                const masterInput = element.shadowRoot.querySelector(
+                    `input[name="masterRecord"][value="${WINNER_ID}"]`
+                );
+                expect(masterInput).not.toBeNull();
+                masterInput.value = WINNER_ID;
+                masterInput.dispatchEvent(new CustomEvent('change'));
+                return Promise.resolve();
+            })
+            .then(() => {
+                const mergeActions = element.shadowRoot.querySelector(
+                    'c-duplicate-merge-actions'
+                );
+                expect(mergeActions.fieldOverrideMap.FirstName).toBe('Addr');
+                expect(mergeActions.fieldOverrideMap.LastName).toBe('Winner');
+                expect(mergeActions.fieldOverrideMap.Address).toBe(WINNER_ID);
+            });
+    });
+
+    it('keeps a manual per-field override after the master selection auto-selected all fields', () => {
+        const element = createDetail();
+        getClusterDetail.emit(CLUSTER_DATA);
+
+        return Promise.resolve()
+            .then(() => {
+                const masterInput = element.shadowRoot.querySelector(
+                    `input[name="masterRecord"][value="${WINNER_ID}"]`
+                );
+                masterInput.value = WINNER_ID;
+                masterInput.dispatchEvent(new CustomEvent('change'));
+                return Promise.resolve();
+            })
+            .then(() => {
+                const table = element.shadowRoot.querySelector(
+                    'c-duplicate-field-comparison-table'
+                );
+                table.dispatchEvent(
+                    new CustomEvent('fieldoverride', {
+                        detail: { fieldName: 'LastName', winningRecordId: MASTER_ID }
+                    })
+                );
+                return Promise.resolve();
+            })
+            .then(() => {
+                const mergeActions = element.shadowRoot.querySelector(
+                    'c-duplicate-merge-actions'
+                );
+                // Manually re-picked field diverges from the master...
+                expect(mergeActions.fieldOverrideMap.LastName).toBe('Master');
+                // ...while every other field stays pinned to the master selection.
+                expect(mergeActions.fieldOverrideMap.Address).toBe(WINNER_ID);
+            });
     });
 });
