@@ -80,8 +80,10 @@ public with sharing class DuplicateMergeService {
                 List<Lead> leads = LeadSelector.getByIds(allIds);
                 Lead masterLead = null;
                 List<Lead> secondaryLeads = new List<Lead>();
+                Map<Id, Lead> leadsById = new Map<Id, Lead>();
 
                 for (Lead l : leads) {
+                    leadsById.put(l.Id, l);
                     if (l.Id == masterId) {
                         masterLead = l;
                     } else {
@@ -93,11 +95,7 @@ public with sharing class DuplicateMergeService {
                     throw new DuplicateMergeServiceException('Master Lead not found: ' + masterId);
                 }
 
-                // Apply field overrides
-                if (fieldOverrides != null && !fieldOverrides.isEmpty()) {
-                    for (String fieldName : fieldOverrides.keySet()) {
-                        masterLead.put(fieldName, fieldOverrides.get(fieldName));
-                    }
+                if (applyLeadOverrides(masterLead, leadsById, fieldOverrides)) {
                     update masterLead;
                 }
 
@@ -115,8 +113,10 @@ public with sharing class DuplicateMergeService {
                 List<Contact> contacts = ContactSelector.getByIds(allIds);
                 Contact masterContact = null;
                 List<Contact> secondaryContacts = new List<Contact>();
+                Map<Id, Contact> contactsById = new Map<Id, Contact>();
 
                 for (Contact c : contacts) {
+                    contactsById.put(c.Id, c);
                     if (c.Id == masterId) {
                         masterContact = c;
                     } else {
@@ -128,12 +128,7 @@ public with sharing class DuplicateMergeService {
                     throw new DuplicateMergeServiceException('Master Contact not found: ' + masterId);
                 }
 
-                // Apply field overrides
-                Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
-                if (!safeOverrides.isEmpty()) {
-                    for (String fieldName : safeOverrides.keySet()) {
-                        masterContact.put(fieldName, safeOverrides.get(fieldName));
-                    }
+                if (applyContactOverrides(masterContact, contactsById, fieldOverrides)) {
                     update masterContact;
                 }
 
@@ -159,20 +154,111 @@ public with sharing class DuplicateMergeService {
             result.put('message', 'Merge completed successfully');
 
         } catch (Exception ex) {
+            String message = String.isNotBlank(ex.getMessage())
+                ? ex.getMessage()
+                : ex.getTypeName() + ' at line ' + ex.getLineNumber();
+
             audit.Status__c       = 'Failed';
-            audit.ErrorMessage__c = ex.getMessage();
+            audit.ErrorMessage__c = message;
             update audit;
 
             result.put('success', false);
-            result.put('message', ex.getMessage());
+            result.put('message', message);
         }
 
         return result;
     }
 
+    /**
+     * @description Applies fieldOverrides to a master Lead: generic put() for every
+     *              key except the block-level Address field, which is resolved from
+     *              the already-queried cluster members and delegated to
+     *              mergeAddressField().
+     * @param masterLead     The Lead being mutated.
+     * @param leadsById      All queried cluster member Leads (allIds), keyed by Id.
+     * @param fieldOverrides Map of field API name → winning value (or winning record Id for Address).
+     * @return True if masterLead was mutated and needs to be updated.
+     */
+    private static Boolean applyLeadOverrides(Lead masterLead, Map<Id, Lead> leadsById, Map<String, String> fieldOverrides) {
+        Boolean mutated = false;
+        if (fieldOverrides != null && !fieldOverrides.isEmpty()) {
+            Set<String> addressSnapshotKeys = DuplicateComparisonFields.addressSnapshotKeys();
+            for (String fieldName : fieldOverrides.keySet()) {
+                if (fieldName == DuplicateComparisonFields.ADDRESS_KEY || addressSnapshotKeys.contains(fieldName)) {
+                    continue;
+                }
+                putOverrideValue(masterLead, fieldName, fieldOverrides.get(fieldName));
+                mutated = true;
+            }
+        }
+
+        if (fieldOverrides != null && fieldOverrides.containsKey(DuplicateComparisonFields.ADDRESS_KEY)) {
+            Id winningAddressId = (Id) fieldOverrides.get(DuplicateComparisonFields.ADDRESS_KEY);
+            SObject winningAddressSource = leadsById.get(winningAddressId);
+            if (winningAddressSource != null) {
+                mergeAddressField(masterLead, winningAddressSource, 'Lead');
+                mutated = true;
+            }
+        }
+
+        return mutated;
+    }
+
+    /**
+     * @description Applies fieldOverrides to a master Contact: sanitizeContactOverrides()
+     *              already strips the block-level Address field (alongside Company/Account)
+     *              from the generic put() path; the Address winner is resolved from the
+     *              already-queried cluster members and delegated to mergeAddressField().
+     * @param masterContact  The Contact being mutated.
+     * @param contactsById   All queried cluster member Contacts (allIds), keyed by Id.
+     * @param fieldOverrides Map of field API name → winning value (or winning record Id for Address).
+     * @return True if masterContact was mutated and needs to be updated.
+     */
+    private static Boolean applyContactOverrides(Contact masterContact, Map<Id, Contact> contactsById, Map<String, String> fieldOverrides) {
+        Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+        Boolean mutated = !safeOverrides.isEmpty();
+        if (mutated) {
+            for (String fieldName : safeOverrides.keySet()) {
+                putOverrideValue(masterContact, fieldName, safeOverrides.get(fieldName));
+            }
+        }
+
+        if (fieldOverrides != null && fieldOverrides.containsKey(DuplicateComparisonFields.ADDRESS_KEY)) {
+            Id winningAddressId = (Id) fieldOverrides.get(DuplicateComparisonFields.ADDRESS_KEY);
+            SObject winningAddressSource = contactsById.get(winningAddressId);
+            if (winningAddressSource != null) {
+                mergeAddressField(masterContact, winningAddressSource, 'Contact');
+                mutated = true;
+            }
+        }
+
+        return mutated;
+    }
+
+    /**
+     * @description Writes a single field override onto an SObject, coercing the
+     *              snapshot's string value into the field's real Apex type when
+     *              the generic String put() would fail (currently only the Date
+     *              snapshot fields, see DuplicateComparisonFields.DATE_SNAPSHOT_FIELDS).
+     *              Shared by both the Lead and Contact override loops here, and by
+     *              CrossObjectMergeQueueable's Contact-side override loop, so the
+     *              coercion logic exists in exactly one place.
+     * @param target    The Lead or Contact being mutated.
+     * @param fieldName Field API name (already excluded from Address-related keys by the caller).
+     * @param value     The snapshot's string value for this field, or null/blank.
+     */
+    public static void putOverrideValue(SObject target, String fieldName, String value) {
+        if (DuplicateComparisonFields.DATE_SNAPSHOT_FIELDS.contains(fieldName)) {
+            target.put(fieldName, String.isBlank(value) ? null : Date.valueOf(value));
+        } else {
+            target.put(fieldName, value);
+        }
+    }
+
     private static Map<String, String> sanitizeContactOverrides(Map<String, String> overrides) {
         if (overrides == null || overrides.isEmpty()) return new Map<String, String>();
-        final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account' };
+        final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account', DuplicateComparisonFields.ADDRESS_KEY };
+        BLOCKED.addAll(DuplicateComparisonFields.addressSnapshotKeys());
         Map<String, String> clean = new Map<String, String>();
         for (String key : overrides.keySet()) {
             if (BLOCKED.contains(key)) continue;
@@ -182,6 +268,39 @@ public with sharing class DuplicateMergeService {
             clean.put('AccountId', overrides.get('Account'));
         }
         return clean;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Block-level Address merge (object-type-aware)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * @description Applies the winning Address block (Contact.MailingAddress or
+     *              Lead.Address) from the winning source record onto the master
+     *              record. Address is a compound field whose API names differ by
+     *              object type (Mailing* on Contact, plain on Lead) and cannot be
+     *              written via the generic fieldOverrides put() loop, so callers
+     *              special-case the `Address` override key and delegate here.
+     *              Reads the winning source's subfields (positionally matched to
+     *              its own object type) and writes the master's target subfields
+     *              (positionally matched to masterObjectType). Mutates master in
+     *              place — the caller owns the single DML update.
+     * @param master           The record being kept as the merge master (Contact or Lead).
+     * @param winningSource    The record whose Address block was selected as the winner.
+     * @param masterObjectType 'Contact' or 'Lead' — determines the target subfield API names.
+     */
+    public static void mergeAddressField(SObject master, SObject winningSource, String masterObjectType) {
+        if (master == null || winningSource == null) {
+            return;
+        }
+
+        String sourceObjectType = winningSource.getSObjectType().getDescribe().getName();
+        List<String> sourceSubfields = DuplicateComparisonFields.addressSubfields(sourceObjectType);
+        List<String> targetSubfields = DuplicateComparisonFields.addressSubfields(masterObjectType);
+
+        for (Integer i = 0; i < targetSubfields.size(); i++) {
+            master.put(targetSubfields[i], winningSource.get(sourceSubfields[i]));
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

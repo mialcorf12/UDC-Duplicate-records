@@ -22,6 +22,19 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
     @TestVisible
     private static Id testConvertedContactIdOverride;
 
+    /**
+     * @description Test-only seam that simulates an org where the converted
+     *              Lead is deleted immediately after conversion (a real,
+     *              empirically-verified possibility — Salesforce allows
+     *              deleting a converted Lead even though it blocks further
+     *              field updates on it). Used exclusively to prove the
+     *              winning Address is captured into a local variable BEFORE
+     *              Database.convertLead() runs rather than re-read after it.
+     *              Has no effect outside test context.
+     */
+    @TestVisible
+    private static Boolean testSimulateLeadDeletedAfterConvert = false;
+
     private List<Id> leadIds;
     private Id contactId;
     private Id clusterId;
@@ -86,8 +99,11 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
                     : accumulated + ',' + String.valueOf(leadId);
             } catch (Exception ex) {
                 try { Database.rollback(sp); } catch (Exception rbEx) { /* rollback best-effort */ }
+                String message = String.isNotBlank(ex.getMessage())
+                    ? ex.getMessage()
+                    : ex.getTypeName() + ' at line ' + ex.getLineNumber();
                 audit.Status__c       = 'Failed';
-                audit.ErrorMessage__c = ex.getMessage()?.abbreviate(255);
+                audit.ErrorMessage__c = message.abbreviate(255);
                 update audit;
                 return;
             }
@@ -103,7 +119,46 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
     }
 
     private void convertAndMergeLead(Id leadId) {
+        // ── Step 1b: Capture the winning Address BEFORE conversion ──
+        // Database.convertLead() consumes the Lead: Salesforce blocks any further
+        // field UPDATE on a converted Lead (CANNOT_UPDATE_CONVERTED_LEAD), and a
+        // converted Lead can still be deleted outright by downstream cleanup
+        // automation running in the same or a later transaction. If this Lead is
+        // the selected Address winner, its compound subfields MUST be snapshotted
+        // into a local variable now — re-reading them after conversion is not safe.
+        Boolean isAddressWinner = isWinningAddressSource(leadId);
+        Lead capturedLeadAddress = isAddressWinner ? captureWinningLeadAddress(leadId) : null;
+
         // ── Step 2: Convert Lead into the existing Contact ──
+        Database.LeadConvertResult lcResult = performLeadConversion(leadId);
+
+        if (Test.isRunningTest() && testSimulateLeadDeletedAfterConvert) {
+            delete new Lead(Id = leadId);
+        }
+
+        // ── Step 3-5: Fetch master + converted Contact, apply overrides, merge ──
+        Id convertedContactId = testConvertedContactIdOverride != null
+            ? testConvertedContactIdOverride
+            : lcResult.getContactId();
+
+        if (convertedContactId != null && convertedContactId != contactId) {
+            mergeIntoConvertedContact(convertedContactId, capturedLeadAddress, isAddressWinner);
+        } else {
+            Contact masterContact = new Contact(Id = contactId);
+            if (applyOverridesAndAddress(masterContact, capturedLeadAddress, isAddressWinner)) {
+                update masterContact;
+            }
+        }
+    }
+
+    /**
+     * @description Builds and executes the Database.convertLead() call for the
+     *              given Lead into the master Contact (this.contactId).
+     * @param leadId The Lead to convert.
+     * @return The successful LeadConvertResult.
+     * @throws DuplicateMergeException if the conversion fails.
+     */
+    private Database.LeadConvertResult performLeadConversion(Id leadId) {
         Contact masterForConvert = [SELECT AccountId FROM Contact WHERE Id = :contactId LIMIT 1];
 
         Database.LeadConvert lc = new Database.LeadConvert();
@@ -130,56 +185,107 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
             throw new DuplicateMergeException('Lead conversion failed: ' + String.join(errors, '; '));
         }
 
-        // ── Step 3: Fetch master Contact + converted Contact ──
-        Id convertedContactId = testConvertedContactIdOverride != null
-            ? testConvertedContactIdOverride
-            : lcResult.getContactId();
+        return lcResult;
+    }
 
-        if (convertedContactId != null && convertedContactId != contactId) {
-            List<Contact> contactsToMerge = (List<Contact>) Security.stripInaccessible(
-                AccessType.READABLE,
-                [SELECT Id, Email, Phone, FirstName, LastName, AccountId
-                 FROM   Contact
-                 WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }]
-            ).getRecords();
+    /**
+     * @description Fetches the master and newly-converted Contact, applies
+     *              fieldOverrides (incl. the object-type-aware Address merge),
+     *              and merges the converted Contact into the master.
+     * @param convertedContactId  The Contact created/matched by lead conversion.
+     * @param capturedLeadAddress The winning Lead's pre-convert Address snapshot, or null.
+     * @param isAddressWinner     Whether this lead was the selected Address winner.
+     */
+    private void mergeIntoConvertedContact(Id convertedContactId, Lead capturedLeadAddress, Boolean isAddressWinner) {
+        List<Contact> contactsToMerge = (List<Contact>) Security.stripInaccessible(
+            AccessType.READABLE,
+            [SELECT Id, Email, Phone, FirstName, LastName, AccountId,
+                    MailingStreet, MailingCity, MailingState, MailingPostalCode,
+                    MailingCountry, MailingLatitude, MailingLongitude, MailingGeocodeAccuracy
+             FROM   Contact
+             WHERE  Id IN :new Set<Id>{ contactId, convertedContactId }]
+        ).getRecords();
 
-            Contact masterContact    = null;
-            Contact convertedContact = null;
-            for (Contact c : contactsToMerge) {
-                if (c.Id == contactId) { masterContact    = c; }
-                else                   { convertedContact = c; }
-            }
+        Contact masterContact    = null;
+        Contact convertedContact = null;
+        for (Contact c : contactsToMerge) {
+            if (c.Id == contactId) { masterContact    = c; }
+            else                   { convertedContact = c; }
+        }
 
-            if (masterContact    == null) throw new DuplicateMergeException('Master contact not found: '    + contactId);
-            if (convertedContact == null) throw new DuplicateMergeException('Converted contact not found: ' + convertedContactId);
+        if (masterContact    == null) throw new DuplicateMergeException('Master contact not found: '    + contactId);
+        if (convertedContact == null) throw new DuplicateMergeException('Converted contact not found: ' + convertedContactId);
 
-            // ── Step 4: Apply fieldOverrides ──
-            Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
-            if (!safeOverrides.isEmpty()) {
-                for (String fieldName : safeOverrides.keySet()) {
-                    masterContact.put(fieldName, safeOverrides.get(fieldName));
-                }
-                update masterContact;
-            }
+        if (applyOverridesAndAddress(masterContact, capturedLeadAddress, isAddressWinner)) {
+            update masterContact;
+        }
 
-            // ── Step 5: Merge master with converted Contact ──
-            Database.merge(masterContact, convertedContact);
+        Database.merge(masterContact, convertedContact);
+    }
 
-        } else {
-            Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
-            if (!safeOverrides.isEmpty()) {
-                Contact masterContact = new Contact(Id = contactId);
-                for (String fieldName : safeOverrides.keySet()) {
-                    masterContact.put(fieldName, safeOverrides.get(fieldName));
-                }
-                update masterContact;
+    /**
+     * @description Determines whether the given leadId is the record selected
+     *              as the winning source for the block-level Address override.
+     * @param leadId The Lead currently being converted.
+     * @return True if fieldOverrides['Address'] equals leadId.
+     */
+    private Boolean isWinningAddressSource(Id leadId) {
+        if (fieldOverrides == null || !fieldOverrides.containsKey(DuplicateComparisonFields.ADDRESS_KEY)) {
+            return false;
+        }
+        Id winningAddressId = (Id) fieldOverrides.get(DuplicateComparisonFields.ADDRESS_KEY);
+        return winningAddressId == leadId;
+    }
+
+    /**
+     * @description Queries the winning Lead's compound Address subfields. MUST be
+     *              called before Database.convertLead() — see the caller's Step 1b
+     *              comment for why a post-conversion re-read is not safe.
+     * @param leadId The winning Lead to snapshot.
+     * @return The Lead record with its Address subfields populated, or null if not found/accessible.
+     */
+    private Lead captureWinningLeadAddress(Id leadId) {
+        List<String> fields = new List<String>{ 'Id' };
+        fields.addAll(DuplicateComparisonFields.addressSubfields('Lead'));
+        String query = 'SELECT ' + String.join(fields, ', ') + ' FROM Lead WHERE Id = :leadId LIMIT 1';
+        List<Lead> results = (List<Lead>) Security.stripInaccessible(
+            AccessType.READABLE,
+            Database.query(query)
+        ).getRecords();
+        return results.isEmpty() ? null : (Lead) results[0];
+    }
+
+    /**
+     * @description Applies non-Address fieldOverrides to the master Contact and,
+     *              when this lead was the selected Address winner, writes its
+     *              pre-captured Address onto the master's Mailing* subfields via
+     *              the shared DuplicateMergeService.mergeAddressField() helper.
+     * @param masterContact       The Contact being mutated (queried or Id-only).
+     * @param capturedLeadAddress The winning Lead's pre-convert Address snapshot, or null.
+     * @param isAddressWinner     Whether this lead was the selected Address winner.
+     * @return True if masterContact was mutated and needs to be updated.
+     */
+    private Boolean applyOverridesAndAddress(Contact masterContact, Lead capturedLeadAddress, Boolean isAddressWinner) {
+        Map<String, String> safeOverrides = sanitizeContactOverrides(fieldOverrides);
+        Boolean mutated = !safeOverrides.isEmpty();
+        if (mutated) {
+            for (String fieldName : safeOverrides.keySet()) {
+                DuplicateMergeService.putOverrideValue(masterContact, fieldName, safeOverrides.get(fieldName));
             }
         }
+
+        if (isAddressWinner && capturedLeadAddress != null) {
+            DuplicateMergeService.mergeAddressField(masterContact, capturedLeadAddress, 'Contact');
+            mutated = true;
+        }
+
+        return mutated;
     }
 
     private static Map<String, String> sanitizeContactOverrides(Map<String, String> overrides) {
         if (overrides == null || overrides.isEmpty()) return new Map<String, String>();
-        final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account' };
+        final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account', DuplicateComparisonFields.ADDRESS_KEY };
+        BLOCKED.addAll(DuplicateComparisonFields.addressSnapshotKeys());
         Map<String, String> clean = new Map<String, String>();
         for (String key : overrides.keySet()) {
             if (BLOCKED.contains(key)) continue;

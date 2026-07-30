@@ -26,7 +26,6 @@
   /* Concatenar todos los correos actuales no vacíos al crear */
   TRIM(
     IF(ISBLANK({!$Record.Email}), &quot;&quot;, {!$Record.Email} &amp; &quot;; &quot;) &amp;
-    IF(ISBLANK({!$Record.ASD_Email__c}), &quot;&quot;, {!$Record.ASD_Email__c} &amp; &quot;; &quot;) &amp;
     IF(ISBLANK({!$Record.Previous_Email__c}), &quot;&quot;, {!$Record.Previous_Email__c} &amp; &quot;; &quot;) &amp;
     IF(ISBLANK({!$Record.Company_Email__c}), &quot;&quot;, {!$Record.Company_Email__c} &amp; &quot;; &quot;) &amp;
     IF(ISBLANK({!$Record.Portal_Email_Address__c}), &quot;&quot;, {!$Record.Portal_Email_Address__c} &amp; &quot;; &quot;)
@@ -41,15 +40,6 @@
       NOT(CONTAINS({!$Record.Email_collection__c}, {!$Record.Email}))
     ),
     &quot;; &quot; &amp; {!$Record.Email},
-    &quot;&quot;
-  ) &amp;
-  IF(
-    AND(
-      ISCHANGED({!$Record.ASD_Email__c}),
-      NOT(ISBLANK({!$Record.ASD_Email__c})),
-      NOT(CONTAINS({!$Record.Email_collection__c}, {!$Record.ASD_Email__c}))
-    ),
-    &quot;; &quot; &amp; {!$Record.ASD_Email__c},
     &quot;&quot;
   ) &amp;
   IF(
@@ -110,7 +100,6 @@
         </connector>
         <filterFormula>OR(
   ISCHANGED({!$Record.Email}),
-  ISCHANGED({!$Record.ASD_Email__c}),
   ISCHANGED({!$Record.Previous_Email__c}),
   ISCHANGED({!$Record.Company_Email__c}),
   ISCHANGED({!$Record.Portal_Email_Address__c}),
@@ -118,7 +107,6 @@
     ISNEW(),
     OR(
       NOT(ISBLANK({!$Record.Email})),
-      NOT(ISBLANK({!$Record.ASD_Email__c})),
       NOT(ISBLANK({!$Record.Previous_Email__c})),
       NOT(ISBLANK({!$Record.Company_Email__c})),
       NOT(ISBLANK({!$Record.Portal_Email_Address__c}))

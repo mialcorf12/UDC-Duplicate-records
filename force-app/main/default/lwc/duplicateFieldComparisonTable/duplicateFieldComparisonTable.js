@@ -2,11 +2,20 @@ import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 
 const BASE_FIELDS = [
-    { fieldName: 'FirstName', fieldLabel: 'First Name' },
-    { fieldName: 'LastName',  fieldLabel: 'Last Name' },
-    { fieldName: 'Email',     fieldLabel: 'Email' },
-    { fieldName: 'Phone',     fieldLabel: 'Phone' },
-    { fieldName: 'AccountId', fieldLabel: 'Company', displayFieldName: 'Company' }
+    { fieldName: 'Portal_User_ID__c',   fieldLabel: 'Portal User ID' },
+    { fieldName: 'FirstName',           fieldLabel: 'First Name' },
+    { fieldName: 'LastName',            fieldLabel: 'Last Name' },
+    { fieldName: 'Email',               fieldLabel: 'Email' },
+    { fieldName: 'Phone',               fieldLabel: 'Phone' },
+    { fieldName: 'MobilePhone',         fieldLabel: 'Mobile Phone' },
+    { fieldName: 'AccountId',           fieldLabel: 'Company', displayFieldName: 'Company' },
+    { fieldName: 'Sales_Informed_Agreement_Signed__c', fieldLabel: 'Date Account Agreement Signed' },
+    { fieldName: 'Email_Collection__c', fieldLabel: 'Email Collection' },
+    // Address is a single block-level row: one radio per record selects the
+    // entire compound address, not per-subfield rows. The row displays the
+    // pre-formatted "Address" string from the snapshot; the merge write itself
+    // (object-type-aware subfield mapping) is handled server-side.
+    { fieldName: 'Address',             fieldLabel: 'Address' }
 ];
 
 const OBJECT_TYPE_BADGE = {
@@ -65,15 +74,7 @@ export default class DuplicateFieldComparisonTable extends NavigationMixin(Light
     }
 
     get comparisonFields() {
-        const types = new Set(this._parsedMembers.map((m) => m.objectType));
-        const fields = [...BASE_FIELDS];
-        /*if (types.has('Lead') || types.has('Contact')) {
-            fields.push({ fieldName: 'Company', fieldLabel: 'Company' });
-        }
-        if (types.has('Lead') || types.has('Contact')) {
-            fields.push({ fieldName: 'Company', fieldLabel: 'Company' });
-        }*/
-        return fields;
+        return [...BASE_FIELDS];
     }
 
     get fieldRows() {
@@ -81,14 +82,23 @@ export default class DuplicateFieldComparisonTable extends NavigationMixin(Light
             const selectedRecordId = this.fieldOverrideMap
                 ? this.fieldOverrideMap[f.fieldName]
                 : null;
-            const values = this._parsedMembers.map((m) => ({
-                recordId: m.recordId,
-                value: m.snapshot[f.displayFieldName || f.fieldName] || '',
-                objectType: m.objectType,
-                inputId: `${f.fieldName}-${m.recordId}`,
-                isSelected: selectedRecordId === m.recordId,
-                isMaster: m.recordId === this.masterRecordId
-            }));
+            const values = this._parsedMembers.map((m) => {
+                const value = m.snapshot[f.displayFieldName || f.fieldName] || '';
+                const isHighlighted = f.fieldName === 'Portal_User_ID__c' && !!value;
+                const highlightSuffix = isHighlighted ? ' slds-text-color_error slds-text-title_bold' : '';
+                return {
+                    recordId: m.recordId,
+                    value,
+                    objectType: m.objectType,
+                    inputId: `${f.fieldName}-${m.recordId}`,
+                    isSelected: selectedRecordId === m.recordId,
+                    isMaster: m.recordId === this.masterRecordId,
+                    isHighlighted,
+                    plainTextClass: `slds-text-body_small slds-text-color_weak${highlightSuffix}`,
+                    badgeClass: `slds-badge slds-badge_lightest${highlightSuffix}`,
+                    labelClass: `slds-form-element__label slds-truncate${highlightSuffix}`
+                };
+            });
 
             return {
                 fieldName: f.fieldName,

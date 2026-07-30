@@ -3,6 +3,8 @@
 /.sfdx
 /.vscode
 **/.DS_Store
+node_modules/
+coverage/
 /openspec/changes/archive/guia.md
 /records
 

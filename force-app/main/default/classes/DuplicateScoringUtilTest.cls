@@ -209,32 +209,75 @@ private class DuplicateScoringUtilTest {
     // buildSnapshotJSON
     // ─────────────────────────────────────────────────────────────────────────
 
+    // Total snapshot key count: 10 scalar keys (Email, Phone, MobilePhone, FirstName,
+    // LastName, Company, AccountId, Sales_Informed_Agreement_Signed__c,
+    // Email_Collection__c, Portal_User_ID__c) + 8 canonical Address subfield keys
+    // (AddressStreet, AddressCity, AddressState, AddressPostalCode, AddressCountry,
+    // AddressLatitude, AddressLongitude, AddressGeocodeAccuracy) + 1 formatted
+    // "Address" display string = 19.
+    private static final Integer EXPECTED_SNAPSHOT_FIELD_COUNT = 19;
+
+    private static final Set<String> EXPECTED_SNAPSHOT_KEYS = new Set<String>{
+        'Email', 'Phone', 'MobilePhone', 'FirstName', 'LastName', 'Company', 'AccountId',
+        'Sales_Informed_Agreement_Signed__c', 'Email_Collection__c', 'Portal_User_ID__c',
+        'Address',
+        'AddressStreet', 'AddressCity', 'AddressState', 'AddressPostalCode', 'AddressCountry',
+        'AddressLatitude', 'AddressLongitude', 'AddressGeocodeAccuracy'
+    };
+
     @isTest
-    static void testBuildSnapshotJSON_contactHasSixFields() {
+    static void testBuildSnapshotJSON_contactHasAllSnapshotFields() {
+        // Linked to an Account (rather than a bare Contact) to satisfy this org's
+        // pre-existing "Contact record type must match parent Company" validation
+        // rule, which is unrelated to this change but fires on any bare Contact
+        // insert in this sandbox.
+        Account a = new Account(Name = 'Snapshot Test Corp');
+        insert a;
         Contact c = new Contact(
             FirstName = 'John',
             LastName  = 'Smith',
             Email     = 'john@example.com',
-            Phone     = '5551234567'
+            Phone     = '5551234567',
+            MobilePhone = '5559998888',
+            AccountId = a.Id,
+            Sales_Informed_Agreement_Signed__c = Date.newInstance(2026, 1, 15),
+            Email_Collection__c = 'opted-in',
+            Portal_User_ID__c   = 'PORTAL001',
+            MailingStreet  = '123 Main St',
+            MailingCity    = 'Springfield',
+            MailingState   = 'IL',
+            MailingPostalCode = '62701',
+            MailingCountry = 'US'
         );
         insert c;
-        Contact retrieved = [SELECT Id, FirstName, LastName, Email, Phone, AccountId, Account.Name FROM Contact WHERE Id = :c.Id];
+        Contact retrieved = [
+            SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, AccountId, Account.Name,
+                   Sales_Informed_Agreement_Signed__c, Email_Collection__c, Portal_User_ID__c,
+                   MailingStreet, MailingCity, MailingState, MailingPostalCode, MailingCountry,
+                   MailingLatitude, MailingLongitude, MailingGeocodeAccuracy
+            FROM Contact WHERE Id = :c.Id
+        ];
 
         Test.startTest();
         String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Contact');
         Test.stopTest();
 
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
-        System.assertEquals(6, parsed.size(), 'Contact snapshot should contain exactly 6 fields');
-        System.assert(parsed.containsKey('Email'),     'Must contain Email');
-        System.assert(parsed.containsKey('Phone'),     'Must contain Phone');
-        System.assert(parsed.containsKey('FirstName'), 'Must contain FirstName');
-        System.assert(parsed.containsKey('LastName'),  'Must contain LastName');
-        System.assert(parsed.containsKey('Company'),   'Must contain Company');
-        System.assert(parsed.containsKey('AccountId'), 'Must contain AccountId');
+        System.assertEquals(
+            EXPECTED_SNAPSHOT_FIELD_COUNT, parsed.size(),
+            'Contact snapshot should contain exactly ' + EXPECTED_SNAPSHOT_FIELD_COUNT + ' fields'
+        );
+        System.assertEquals(EXPECTED_SNAPSHOT_KEYS, parsed.keySet(), 'Snapshot must contain only the expected keys');
         System.assertEquals('john@example.com', parsed.get('Email'), 'Email value should match');
         System.assertEquals('John', parsed.get('FirstName'), 'FirstName value should match');
-        System.assertEquals('', parsed.get('AccountId'), 'AccountId should be empty when no account');
+        System.assertEquals('5559998888', parsed.get('MobilePhone'), 'MobilePhone value should match');
+        System.assertEquals('2026-01-15', parsed.get('Sales_Informed_Agreement_Signed__c'), 'Agreement signed date should be ISO-formatted');
+        System.assertEquals('opted-in', parsed.get('Email_Collection__c'), 'Email_Collection__c value should match');
+        System.assertEquals('PORTAL001', parsed.get('Portal_User_ID__c'), 'Portal_User_ID__c value should match');
+        System.assertEquals(String.valueOf(a.Id), parsed.get('AccountId'), 'AccountId should reflect the linked account');
+        System.assertEquals('123 Main St', parsed.get('AddressStreet'), 'AddressStreet should read from MailingStreet');
+        System.assertEquals('Springfield', parsed.get('AddressCity'), 'AddressCity should read from MailingCity');
+        System.assertEquals('123 Main St, Springfield, IL, 62701, US', parsed.get('Address'), 'Address display string should join populated parts');
     }
 
     @isTest
@@ -243,7 +286,13 @@ private class DuplicateScoringUtilTest {
         insert a;
         Contact c = new Contact(FirstName = 'John', LastName = 'Smith', Email = 'john@example.com', AccountId = a.Id);
         insert c;
-        Contact retrieved = [SELECT Id, FirstName, LastName, Email, Phone, AccountId, Account.Name FROM Contact WHERE Id = :c.Id];
+        Contact retrieved = [
+            SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, AccountId, Account.Name,
+                   Sales_Informed_Agreement_Signed__c, Email_Collection__c, Portal_User_ID__c,
+                   MailingStreet, MailingCity, MailingState, MailingPostalCode, MailingCountry,
+                   MailingLatitude, MailingLongitude, MailingGeocodeAccuracy
+            FROM Contact WHERE Id = :c.Id
+        ];
 
         Test.startTest();
         String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Contact');
@@ -252,44 +301,94 @@ private class DuplicateScoringUtilTest {
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
         System.assertEquals(String.valueOf(a.Id), parsed.get('AccountId'), 'AccountId should match the linked account');
         System.assertEquals('Test Corp', parsed.get('Company'), 'Company should reflect Account.Name');
+        System.assertEquals('', parsed.get('Address'), 'Address display string should be empty with no address data');
     }
 
     @isTest
-    static void testBuildSnapshotJSON_leadHasSixFields() {
+    static void testBuildSnapshotJSON_leadHasAllSnapshotFields() {
         Lead l = new Lead(
             FirstName = 'Jane',
             LastName  = 'Doe',
             Email     = 'jane@company.com',
             Phone     = '5559876543',
-            Company   = 'Acme Corp'
+            MobilePhone = '5551112222',
+            Company   = 'Acme Corp',
+            Sales_Informed_Agreement_Signed__c = Date.newInstance(2026, 2, 1),
+            Email_Collection__c = 'opted-out',
+            Portal_User_ID__c   = 'PORTAL002',
+            Street  = '456 Oak Ave',
+            City    = 'Metropolis',
+            State   = 'NY',
+            PostalCode = '10001',
+            Country = 'US'
         );
         insert l;
-        Lead retrieved = [SELECT Id, FirstName, LastName, Email, Phone, Company FROM Lead WHERE Id = :l.Id];
+        Lead retrieved = [
+            SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Company,
+                   Sales_Informed_Agreement_Signed__c, Email_Collection__c, Portal_User_ID__c,
+                   Street, City, State, PostalCode, Country, Latitude, Longitude, GeocodeAccuracy
+            FROM Lead WHERE Id = :l.Id
+        ];
 
         Test.startTest();
         String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Lead');
         Test.stopTest();
 
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
-        System.assertEquals(6, parsed.size(), 'Lead snapshot should contain exactly 6 fields');
+        System.assertEquals(
+            EXPECTED_SNAPSHOT_FIELD_COUNT, parsed.size(),
+            'Lead snapshot should contain exactly ' + EXPECTED_SNAPSHOT_FIELD_COUNT + ' fields'
+        );
         System.assertEquals('Acme Corp', parsed.get('Company'), 'Company value should match');
         System.assertEquals('jane@company.com', parsed.get('Email'), 'Email value should match');
+        System.assertEquals('5551112222', parsed.get('MobilePhone'), 'MobilePhone value should match');
         System.assertEquals('', parsed.get('AccountId'), 'AccountId should always be empty for Lead');
+        System.assertEquals('456 Oak Ave', parsed.get('AddressStreet'), 'AddressStreet should read from plain Street');
+        System.assertEquals('456 Oak Ave, Metropolis, NY, 10001, US', parsed.get('Address'), 'Address display string should join populated parts');
     }
 
     @isTest
     static void testBuildSnapshotJSON_noExtraFields() {
         Lead l = new Lead(FirstName = 'X', LastName = 'Y', Company = 'C');
         insert l;
-        Lead retrieved = [SELECT Id, FirstName, LastName, Email, Phone, Company FROM Lead WHERE Id = :l.Id];
+        Lead retrieved = [
+            SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Company,
+                   Sales_Informed_Agreement_Signed__c, Email_Collection__c, Portal_User_ID__c,
+                   Street, City, State, PostalCode, Country, Latitude, Longitude, GeocodeAccuracy
+            FROM Lead WHERE Id = :l.Id
+        ];
 
         Test.startTest();
         String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Lead');
         Test.stopTest();
 
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
-        Set<String> expectedKeys = new Set<String>{ 'Email', 'Phone', 'FirstName', 'LastName', 'Company', 'AccountId' };
-        System.assertEquals(expectedKeys, parsed.keySet(), 'Snapshot must contain only the 6 expected fields');
+        System.assertEquals(EXPECTED_SNAPSHOT_KEYS, parsed.keySet(), 'Snapshot must contain only the expected fields');
+    }
+
+    @isTest
+    static void testBuildSnapshotJSON_leadMissingAddress_blankFieldsNoException() {
+        // Graceful degradation at the source: a record with no address data at all
+        // (e.g. a historical/legacy record) must not throw and must produce blank
+        // address values rather than nulls, so downstream JSON consumers (LWC)
+        // never see a null where an empty string is expected.
+        Lead l = new Lead(FirstName = 'No', LastName = 'Address', Company = 'C');
+        insert l;
+        Lead retrieved = [
+            SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Company,
+                   Sales_Informed_Agreement_Signed__c, Email_Collection__c, Portal_User_ID__c,
+                   Street, City, State, PostalCode, Country, Latitude, Longitude, GeocodeAccuracy
+            FROM Lead WHERE Id = :l.Id
+        ];
+
+        Test.startTest();
+        String jsonStr = DuplicateScoringUtil.buildSnapshotJSON(retrieved, 'Lead');
+        Test.stopTest();
+
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(jsonStr);
+        System.assertEquals('', parsed.get('Address'), 'Address display string should be blank, not null');
+        System.assertEquals('', parsed.get('AddressStreet'), 'AddressStreet should be blank, not null');
+        System.assertEquals('', parsed.get('Sales_Informed_Agreement_Signed__c'), 'Missing agreement date should be blank, not null');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -30,17 +30,17 @@
 
                                     <!-- Ignored / Stale: plain text, no radios -->
                                     <template if:true={isReadOnly}>
-                                        <span class="slds-text-body_small slds-text-color_weak" title={val.value}>{val.value}</span>
+                                        <span class={val.plainTextClass} title={val.value}>{val.value}</span>
                                     </template>
 
                                     <template if:false={isReadOnly}>
                                         <!-- Merged: master = outlined badge, others = plain text -->
                                         <template if:true={isMerged}>
                                             <template if:true={val.isMaster}>
-                                                <span class="slds-badge slds-badge_lightest" title={val.value}>{val.value}</span>
+                                                <span class={val.badgeClass} title={val.value}>{val.value}</span>
                                             </template>
                                             <template if:false={val.isMaster}>
-                                                <span class="slds-text-body_small slds-text-color_weak" title={val.value}>{val.value}</span>
+                                                <span class={val.plainTextClass} title={val.value}>{val.value}</span>
                                             </template>
                                         </template>
 
@@ -56,7 +56,7 @@
                                                         />
                                                         <label class="slds-radio__label" for={val.inputId}>
                                                             <span class="slds-radio_faux"></span>
-                                                            <span class="slds-form-element__label slds-truncate" title={val.value}>{val.value}</span>
+                                                            <span class={val.labelClass} title={val.value}>{val.value}</span>
                                                         </label>
                                                     </span>
                                                 </div>
