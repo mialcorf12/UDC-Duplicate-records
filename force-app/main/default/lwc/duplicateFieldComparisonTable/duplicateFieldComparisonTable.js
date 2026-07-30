@@ -82,14 +82,23 @@ export default class DuplicateFieldComparisonTable extends NavigationMixin(Light
             const selectedRecordId = this.fieldOverrideMap
                 ? this.fieldOverrideMap[f.fieldName]
                 : null;
-            const values = this._parsedMembers.map((m) => ({
-                recordId: m.recordId,
-                value: m.snapshot[f.displayFieldName || f.fieldName] || '',
-                objectType: m.objectType,
-                inputId: `${f.fieldName}-${m.recordId}`,
-                isSelected: selectedRecordId === m.recordId,
-                isMaster: m.recordId === this.masterRecordId
-            }));
+            const values = this._parsedMembers.map((m) => {
+                const value = m.snapshot[f.displayFieldName || f.fieldName] || '';
+                const isHighlighted = f.fieldName === 'Portal_User_ID__c' && !!value;
+                const highlightSuffix = isHighlighted ? ' slds-text-color_error slds-text-title_bold' : '';
+                return {
+                    recordId: m.recordId,
+                    value,
+                    objectType: m.objectType,
+                    inputId: `${f.fieldName}-${m.recordId}`,
+                    isSelected: selectedRecordId === m.recordId,
+                    isMaster: m.recordId === this.masterRecordId,
+                    isHighlighted,
+                    plainTextClass: `slds-text-body_small slds-text-color_weak${highlightSuffix}`,
+                    badgeClass: `slds-badge slds-badge_lightest${highlightSuffix}`,
+                    labelClass: `slds-form-element__label slds-truncate${highlightSuffix}`
+                };
+            });
 
             return {
                 fieldName: f.fieldName,

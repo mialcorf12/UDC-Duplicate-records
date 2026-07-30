@@ -174,6 +174,68 @@ describe('c-duplicate-field-comparison-table', () => {
         });
     });
 
+    it('highlights a populated Portal_User_ID__c value in red/bold on the open (radio) row', () => {
+        const element = createTable({
+            members: [CONTACT_MEMBER_FULL_SNAPSHOT, LEAD_MEMBER_FULL_SNAPSHOT],
+            masterRecordId: '003000000000001AAA'
+        });
+
+        return Promise.resolve().then(() => {
+            const portalRadio = element.shadowRoot.querySelector(
+                `input[name="Portal_User_ID__c"][value="${CONTACT_MEMBER_FULL_SNAPSHOT.RecordId__c}"]`
+            );
+            const label = portalRadio.closest('.slds-radio').querySelector(
+                '.slds-form-element__label'
+            );
+            expect(label.classList).toContain('slds-text-color_error');
+            expect(label.classList).toContain('slds-text-bold');
+
+            // A different row (FirstName) must never get the highlight classes.
+            const firstNameRadio = element.shadowRoot.querySelector(
+                `input[name="FirstName"][value="${CONTACT_MEMBER_FULL_SNAPSHOT.RecordId__c}"]`
+            );
+            const firstNameLabel = firstNameRadio.closest('.slds-radio').querySelector(
+                '.slds-form-element__label'
+            );
+            expect(firstNameLabel.classList).not.toContain('slds-text-color_error');
+        });
+    });
+
+    it('does not highlight Portal_User_ID__c when the value is blank', () => {
+        const element = createTable({
+            members: [LEGACY_MEMBER_MISSING_NEW_FIELDS],
+            masterRecordId: '003000000000002AAA'
+        });
+
+        return Promise.resolve().then(() => {
+            const portalRadio = element.shadowRoot.querySelector(
+                `input[name="Portal_User_ID__c"][value="${LEGACY_MEMBER_MISSING_NEW_FIELDS.RecordId__c}"]`
+            );
+            const label = portalRadio.closest('.slds-radio').querySelector(
+                '.slds-form-element__label'
+            );
+            expect(label.classList).not.toContain('slds-text-color_error');
+        });
+    });
+
+    it('highlights a populated Portal_User_ID__c value in read-only mode', () => {
+        const element = createTable({
+            members: [CONTACT_MEMBER_FULL_SNAPSHOT, LEAD_MEMBER_FULL_SNAPSHOT],
+            masterRecordId: '003000000000001AAA',
+            isReadOnly: true
+        });
+
+        return Promise.resolve().then(() => {
+            const rows = element.shadowRoot.querySelectorAll('tbody tr');
+            const rowLabels = Array.from(rows).map(
+                (r) => r.querySelector('td:first-child span').textContent
+            );
+            const portalRow = rows[rowLabels.indexOf('Portal User ID')];
+            const highlighted = portalRow.querySelector('span.slds-text-color_error.slds-text-bold');
+            expect(highlighted).not.toBeNull();
+        });
+    });
+
     it('shows the empty-state illustration when there are no members', () => {
         const element = createTable({ members: [] });
 

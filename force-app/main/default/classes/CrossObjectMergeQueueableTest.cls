@@ -401,6 +401,75 @@ private class CrossObjectMergeQueueableTest {
     }
 
     @isTest
+    static void testExecute_fullOverrideMapWithAddressSnapshotKeys_succeeds() {
+        Lead lead = new Lead(
+            FirstName = 'Full', LastName = 'Winner', Company = 'Winner Co',
+            Email = 'full.winner@testexample.com', Phone = '5559876543',
+            Street = '123 Winner St', City = 'WinnerCity', State = 'WS',
+            PostalCode = '99999', Country = 'US'
+        );
+        insert lead;
+
+        Contact contact = createContact('Full', 'Master', 'full.winner@testexample.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        // Mirrors DuplicateClusterDetail.buildOverridesForMember: every snapshot
+        // key (incl. the 8 canonical Address subfield keys) mapped to the master.
+        Map<String, String> overrides = new Map<String, String>{
+            'FirstName' => 'Full',
+            DuplicateComparisonFields.ADDRESS_KEY => String.valueOf(lead.Id)
+        };
+        for (String key : DuplicateComparisonFields.addressSnapshotKeys()) {
+            overrides.put(key, String.valueOf(contact.Id));
+        }
+
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, contact.Id, cluster.Id, overrides, null
+        ));
+        Test.stopTest();
+
+        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
+        System.assertEquals(1, audits.size(), 'Audit should be created');
+        System.assertEquals('Success', audits[0].Status__c,
+            'Merge must not fail when the override map includes Address snapshot keys: ' + audits[0].ErrorMessage__c);
+
+        Contact masterAfter = [
+            SELECT MailingStreet, MailingCity
+            FROM   Contact
+            WHERE  Id = :contact.Id
+        ];
+        System.assertEquals('123 Winner St', masterAfter.MailingStreet,
+            'Address override must still resolve via mergeAddressField, not the ignored snapshot keys');
+    }
+
+    @isTest
+    static void testExecute_dateOverride_appliesParsedDateWithoutThrowing() {
+        Lead lead = createLead('Date', 'Cross', 'date.cross@testexample.com');
+        Contact contact = createContact('Date', 'Master', 'date.cross@testexample.com');
+        DuplicateCluster__c cluster = createCluster();
+
+        Map<String, String> overrides = new Map<String, String>{
+            'Sales_Informed_Agreement_Signed__c' => '2026-02-20'
+        };
+
+        Test.startTest();
+        System.enqueueJob(new CrossObjectMergeQueueable(
+            new List<Id>{ lead.Id }, contact.Id, cluster.Id, overrides, null
+        ));
+        Test.stopTest();
+
+        List<DuplicateMergeAudit__c> audits = [SELECT Status__c, ErrorMessage__c FROM DuplicateMergeAudit__c];
+        System.assertEquals(1, audits.size(), 'Audit should be created');
+        System.assertEquals('Success', audits[0].Status__c,
+            'Merge must not throw Illegal assignment from String to Date: ' + audits[0].ErrorMessage__c);
+
+        Contact masterAfter = [SELECT Sales_Informed_Agreement_Signed__c FROM Contact WHERE Id = :contact.Id];
+        System.assertEquals(Date.newInstance(2026, 2, 20), masterAfter.Sales_Informed_Agreement_Signed__c,
+            'Master Contact should adopt the winning parsed Date value');
+    }
+
+    @isTest
     static void testExecute_addressNotOverridden_masterAddressUnchanged() {
         Lead lead = createLead('NoAddr', 'Winner', 'noaddr.winner@testexample.com');
 
