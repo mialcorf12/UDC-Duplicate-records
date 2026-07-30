@@ -99,8 +99,11 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
                     : accumulated + ',' + String.valueOf(leadId);
             } catch (Exception ex) {
                 try { Database.rollback(sp); } catch (Exception rbEx) { /* rollback best-effort */ }
+                String message = String.isNotBlank(ex.getMessage())
+                    ? ex.getMessage()
+                    : ex.getTypeName() + ' at line ' + ex.getLineNumber();
                 audit.Status__c       = 'Failed';
-                audit.ErrorMessage__c = ex.getMessage()?.abbreviate(255);
+                audit.ErrorMessage__c = message.abbreviate(255);
                 update audit;
                 return;
             }
@@ -267,7 +270,7 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
         Boolean mutated = !safeOverrides.isEmpty();
         if (mutated) {
             for (String fieldName : safeOverrides.keySet()) {
-                masterContact.put(fieldName, safeOverrides.get(fieldName));
+                DuplicateMergeService.putOverrideValue(masterContact, fieldName, safeOverrides.get(fieldName));
             }
         }
 
@@ -282,6 +285,7 @@ public with sharing class CrossObjectMergeQueueable implements Queueable {
     private static Map<String, String> sanitizeContactOverrides(Map<String, String> overrides) {
         if (overrides == null || overrides.isEmpty()) return new Map<String, String>();
         final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account', DuplicateComparisonFields.ADDRESS_KEY };
+        BLOCKED.addAll(DuplicateComparisonFields.addressSnapshotKeys());
         Map<String, String> clean = new Map<String, String>();
         for (String key : overrides.keySet()) {
             if (BLOCKED.contains(key)) continue;

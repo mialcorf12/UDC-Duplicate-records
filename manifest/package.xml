@@ -11,6 +11,7 @@
 		<members>ContactSelectorTest</members>
 		<members>CrossObjectMergeQueueable</members>
 		<members>CrossObjectMergeQueueableTest</members>
+		<members>DuplicateComparisonFields</members>
 		<members>DuplicateClusterController</members>
 		<members>DuplicateClusterControllerTest</members>
 		<members>DuplicateClusterSelector</members>

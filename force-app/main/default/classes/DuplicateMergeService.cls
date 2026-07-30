@@ -154,12 +154,16 @@ public with sharing class DuplicateMergeService {
             result.put('message', 'Merge completed successfully');
 
         } catch (Exception ex) {
+            String message = String.isNotBlank(ex.getMessage())
+                ? ex.getMessage()
+                : ex.getTypeName() + ' at line ' + ex.getLineNumber();
+
             audit.Status__c       = 'Failed';
-            audit.ErrorMessage__c = ex.getMessage();
+            audit.ErrorMessage__c = message;
             update audit;
 
             result.put('success', false);
-            result.put('message', ex.getMessage());
+            result.put('message', message);
         }
 
         return result;
@@ -178,11 +182,12 @@ public with sharing class DuplicateMergeService {
     private static Boolean applyLeadOverrides(Lead masterLead, Map<Id, Lead> leadsById, Map<String, String> fieldOverrides) {
         Boolean mutated = false;
         if (fieldOverrides != null && !fieldOverrides.isEmpty()) {
+            Set<String> addressSnapshotKeys = DuplicateComparisonFields.addressSnapshotKeys();
             for (String fieldName : fieldOverrides.keySet()) {
-                if (fieldName == DuplicateComparisonFields.ADDRESS_KEY) {
+                if (fieldName == DuplicateComparisonFields.ADDRESS_KEY || addressSnapshotKeys.contains(fieldName)) {
                     continue;
                 }
-                masterLead.put(fieldName, fieldOverrides.get(fieldName));
+                putOverrideValue(masterLead, fieldName, fieldOverrides.get(fieldName));
                 mutated = true;
             }
         }
@@ -214,7 +219,7 @@ public with sharing class DuplicateMergeService {
         Boolean mutated = !safeOverrides.isEmpty();
         if (mutated) {
             for (String fieldName : safeOverrides.keySet()) {
-                masterContact.put(fieldName, safeOverrides.get(fieldName));
+                putOverrideValue(masterContact, fieldName, safeOverrides.get(fieldName));
             }
         }
 
@@ -230,9 +235,30 @@ public with sharing class DuplicateMergeService {
         return mutated;
     }
 
+    /**
+     * @description Writes a single field override onto an SObject, coercing the
+     *              snapshot's string value into the field's real Apex type when
+     *              the generic String put() would fail (currently only the Date
+     *              snapshot fields, see DuplicateComparisonFields.DATE_SNAPSHOT_FIELDS).
+     *              Shared by both the Lead and Contact override loops here, and by
+     *              CrossObjectMergeQueueable's Contact-side override loop, so the
+     *              coercion logic exists in exactly one place.
+     * @param target    The Lead or Contact being mutated.
+     * @param fieldName Field API name (already excluded from Address-related keys by the caller).
+     * @param value     The snapshot's string value for this field, or null/blank.
+     */
+    public static void putOverrideValue(SObject target, String fieldName, String value) {
+        if (DuplicateComparisonFields.DATE_SNAPSHOT_FIELDS.contains(fieldName)) {
+            target.put(fieldName, String.isBlank(value) ? null : Date.valueOf(value));
+        } else {
+            target.put(fieldName, value);
+        }
+    }
+
     private static Map<String, String> sanitizeContactOverrides(Map<String, String> overrides) {
         if (overrides == null || overrides.isEmpty()) return new Map<String, String>();
         final Set<String> BLOCKED = new Set<String>{ 'Company', 'Account', DuplicateComparisonFields.ADDRESS_KEY };
+        BLOCKED.addAll(DuplicateComparisonFields.addressSnapshotKeys());
         Map<String, String> clean = new Map<String, String>();
         for (String key : overrides.keySet()) {
             if (BLOCKED.contains(key)) continue;
